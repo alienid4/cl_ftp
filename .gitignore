@@ -1,4 +1,4 @@
-# ============================================
+﻿# ============================================
 # SF 中繼檔案交換主機 — .gitignore
 # 確保 binary / 大檔 / 敏感資訊不會推上 git
 # ============================================
@@ -107,3 +107,6 @@ backups/
 test_data/
 mock_uploads/
 sample_files/
+
+# sf_binaries (binary download cache, do not push to git)
+deploy/offline/sf_binaries/
