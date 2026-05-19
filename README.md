@@ -1,4 +1,4 @@
-# SF 中繼檔案交換主機 (Windows Server 版本)
+﻿# SF 中繼檔案交換主機 (Windows Server 版本)
 
 > **檔案中繼平台**: SFTP 上傳 + ANY 制簽核 + SMB / Portal ZIP 下載 + 全程稽核留痕
 > 對齊主管圖 + Z 方案增值 (OA 端 USER 取檔 / 業務簽核 / Portal 集中視覺化)
@@ -97,7 +97,13 @@ SFTP/
 
 ---
 
-## License & Notice
+## 📢 免責聲明 / Disclaimer
 
-本系統為公司內部資產, 非開源。
-所有 log 與業務資料受公司資安政策保護, 不得外流。
+本專案為**公開的參考實作 (reference implementation)**, 用於展示 Windows Server 上建置中繼檔案交換主機的設計與部署方式。
+
+- 所有業務代號 (u01~u04)、部門名稱、人員姓名、IP 位址、AD 群組名稱**均為示範值**, 不對應任何真實組織。
+- 設計取材自業界常見的金融業 / 企業內網檔案交換場景, **非任何特定公司的實際系統**。
+- 部署到正式環境前, 請依貴公司資安政策 / 命名規範 / 認證方式 自行客製。
+- 開發者不保證本程式碼在所有環境下的安全性或可用性。
+
+This is a public **reference implementation** demonstrating how to build a relay file exchange server on Windows Server. All business codes, department names, user names, IP addresses, and AD group names are **placeholder examples** and do not correspond to any real organization. Adapt to your own corporate policies before production deployment.
