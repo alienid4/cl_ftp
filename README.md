@@ -94,6 +94,8 @@ SFTP/
 | [docs/required_packages.md](docs/required_packages.md) | 套件清單 |
 | [docs/deployment_sop.md](docs/deployment_sop.md) | 部署 SOP |
 | [portal/README.md](portal/README.md) | Portal 開發者指引 |
+| [patches/README.md](patches/README.md) | **Patch 管理規範 + 版本歷史** |
+| [docs/known_issues.md](docs/known_issues.md) | **已知問題 + 解法** (8 個常見坑) |
 
 ---
 
