@@ -95,7 +95,11 @@ SFTP/
 | [docs/deployment_sop.md](docs/deployment_sop.md) | 部署 SOP |
 | [portal/README.md](portal/README.md) | Portal 開發者指引 |
 | [patches/README.md](patches/README.md) | **Patch 管理規範 + 版本歷史** |
-| [docs/known_issues.md](docs/known_issues.md) | **已知問題 + 解法** (8 個常見坑) |
+| [docs/known_issues.md](docs/known_issues.md) | 已知問題 + 解法 (8 個常見坑) |
+| [docs/dev-log/](docs/dev-log/) | **開發者紀錄** (規範 / 錯誤追蹤 / 工作日誌) |
+| [docs/dev-log/issues_log.md](docs/dev-log/issues_log.md) | 錯誤追蹤紀錄 (9 筆) |
+| [docs/dev-log/dev_journal.md](docs/dev-log/dev_journal.md) | 開發者工作日誌 |
+| [docs/dev-log/skill_sf_workflow.md](docs/dev-log/skill_sf_workflow.md) | **SKILL 工作流程紀律** (8 大鐵律) |
 
 ---
 
