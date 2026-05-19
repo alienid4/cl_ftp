@@ -16,6 +16,22 @@
 
 ---
 
+## #010 ✅ OpenSSH 0x800f0907 + install_offline.ps1 不 idempotent
+
+| 欄位 | 內容 |
+|---|---|
+| **發現日期** | 2026-05-19 |
+| **狀態** | ✅ 已解決 (patch v1.0.0.3) |
+| **回報者** | 使用者 (SF 主機跑 install_offline.ps1 紅字錯誤截圖) |
+| **症狀** | Step 07 跑到 OpenSSH 失敗 `Add-WindowsCapability 0x800f0907`, 且整個 script abort, 後面 Python 套件 / deploy 都沒跑 |
+| **根本原因** | 1. `0x800f0907` = 內網無 Windows Update / FoD source<br/>2. `$ErrorActionPreference = 'Stop'` 單錯整 abort<br/>3. 各 step 沒「已裝就 skip」, 重跑會重裝 |
+| **解法** | patch v1.0.0.3:<br/>- 完全 idempotent (每 step check)<br/>- `Continue` + try-catch<br/>- 結尾 summary table<br/>- OpenSSH 4 種 fallback (WSUS / sxs / GUI / 暫開 WU) |
+| **影響檔** | `deploy/offline/install_offline.ps1` |
+| **Patch** | [v1.0.0.3](../../patches/v1.0.0.3/) |
+| **驗證** | 重跑 install, 應看到 idempotent skip + 失敗 step warn 不 abort |
+
+---
+
 ## #001 ✅ 編碼問題: PowerShell 5.1 讀 UTF-8 (no BOM) 中文亂碼
 
 | 欄位 | 內容 |
@@ -172,7 +188,7 @@
 ## 統計
 
 ```
-總計: 9 筆
+總計: 9 筆 (本次無新增, 純文件)
 ✅ 已解決: 7
 🟡 緩解:   2
 🔴 未解:   0
