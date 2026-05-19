@@ -73,29 +73,89 @@ switch ($PSCmdlet.ParameterSetName) {
     default {
         # Auto mode: 偵測 SF root
         if (-not $ProjectRoot) {
-            # 預期結構: <root>/patches/v1.0.0.6/install_patch.ps1
+            # 嘗試 1: 從腳本位置往上找 (預期結構: <root>/patches/v1.0.0.6/install_patch.ps1)
             $candidate = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
             $hasScripts = Test-Path (Join-Path $candidate 'scripts')
             $hasDeploy = Test-Path (Join-Path $candidate 'deploy')
             if ($hasScripts -or $hasDeploy) {
                 $ProjectRoot = $candidate
-                Write-Host "[auto] 偵測到 SF-PROJECT-ROOT: $ProjectRoot"
+                Write-Host "[auto] 從腳本路徑偵測到 SF-PROJECT-ROOT: $ProjectRoot"
             } else {
-                Write-Host "[FAIL] 自動偵測失敗 — 不在 SF-PROJECT-ROOT 結構下" -ForegroundColor Red
-                Write-Host ""
-                Write-Host "請改用以下方式之一:" -ForegroundColor Yellow
-                Write-Host "  1. -Here (拷到當前目錄):"
-                Write-Host "     .\install_patch.ps1 -Here"
-                Write-Host ""
-                Write-Host "  2. -Target <path> (指定目錄):"
-                Write-Host "     .\install_patch.ps1 -Target 'C:\Users\me\Desktop\sf_bundle\'"
-                Write-Host ""
-                Write-Host "  3. -ProjectRoot <path> (手動指定 SF root):"
-                Write-Host "     .\install_patch.ps1 -ProjectRoot 'C:\Users\me\Desktop\sf_bundle\'"
-                exit 1
+                # 嘗試 2: 掃常見位置找 sf_offline_bundle_*
+                Write-Host "[auto] 未在腳本路徑找到 SF root, 掃描常見位置..."
+                $searchLocations = @(
+                    [Environment]::GetFolderPath('Desktop'),
+                    [Environment]::GetFolderPath('MyDocuments'),
+                    "$env:USERPROFILE\Downloads",
+                    'C:\Users\*\Desktop',
+                    'C:\',
+                    'D:\'
+                )
+                $found = @()
+                foreach ($loc in $searchLocations) {
+                    if (Test-Path $loc) {
+                        try {
+                            $matches = Get-ChildItem $loc -Directory -Filter 'sf_offline_bundle_*' -ErrorAction SilentlyContinue
+                            foreach ($m in $matches) {
+                                # 必須含 scripts/ 或 deploy/ 才算合法 SF root
+                                if ((Test-Path (Join-Path $m.FullName 'scripts')) -or (Test-Path (Join-Path $m.FullName 'deploy'))) {
+                                    $found += $m.FullName
+                                    Write-Host "       [候選] $($m.FullName)"
+                                }
+                            }
+                        } catch {}
+                    }
+                }
+
+                if ($found.Count -eq 1) {
+                    $ProjectRoot = $found[0]
+                    Write-Host "[auto] 找到 1 個 SF bundle: $ProjectRoot" -ForegroundColor Green
+                    Write-Host ""
+                    $confirm = Read-Host "套用 patch 到此 SF bundle? (Y/n)"
+                    if ($confirm -and $confirm -notmatch '^[Yy]') {
+                        Write-Host "已取消" -ForegroundColor Yellow
+                        exit 0
+                    }
+                } elseif ($found.Count -gt 1) {
+                    Write-Host ""
+                    Write-Host "找到 $($found.Count) 個 SF bundle, 請選擇:" -ForegroundColor Yellow
+                    for ($i = 0; $i -lt $found.Count; $i++) {
+                        Write-Host "  [$($i+1)] $($found[$i])"
+                    }
+                    $sel = Read-Host "輸入編號 (1-$($found.Count)), 或按 Enter 取消"
+                    if (-not $sel -or -not ($sel -as [int])) {
+                        Write-Host "已取消" -ForegroundColor Yellow
+                        exit 0
+                    }
+                    $ProjectRoot = $found[[int]$sel - 1]
+                    Write-Host "[auto] 選擇: $ProjectRoot" -ForegroundColor Green
+                } else {
+                    # 完全找不到, prompt 使用者
+                    Write-Host ""
+                    Write-Host "[warn] 自動偵測找不到任何 sf_offline_bundle_*" -ForegroundColor Yellow
+                    Write-Host ""
+                    Write-Host "請輸入 SF-PROJECT-ROOT 完整路徑 (例: C:\Users\xxx\Desktop\sf_offline_bundle_20260519_0901)"
+                    Write-Host "或按 Enter 切到 -Here 模式 (拷到當前目錄)"
+                    $userPath = Read-Host "Path"
+                    if (-not $userPath) {
+                        Write-Host "[fallback] 切到 -Here 模式" -ForegroundColor Cyan
+                        $destRoot = (Get-Location).Path
+                        Write-Host "[dest] $destRoot"
+                        # 跳過下面 ProjectRoot 處理, 直接進 copy 階段
+                        $destRoot
+                    } else {
+                        if (-not (Test-Path $userPath)) {
+                            Write-Host "[FAIL] 路徑不存在: $userPath" -ForegroundColor Red
+                            exit 1
+                        }
+                        $ProjectRoot = (Resolve-Path $userPath).Path
+                    }
+                }
             }
         }
-        $destRoot = (Resolve-Path $ProjectRoot).Path
+        if ($ProjectRoot) {
+            $destRoot = (Resolve-Path $ProjectRoot).Path
+        }
     }
 }
 
