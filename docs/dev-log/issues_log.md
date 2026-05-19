@@ -16,6 +16,21 @@
 
 ---
 
+## #016 ✅ sshd restart fail (Subsystem 路徑 + Banner 不存在)
+
+| 欄位 | 內容 |
+|---|---|
+| **發現日期** | 2026-05-20 |
+| **狀態** | ✅ 已解決 (patch v1.0.0.8) |
+| **症狀** | 03_install_openssh.ps1 套完 sshd_config 後 Restart-Service sshd 失敗:<br/>`無法啟動服務 'OpenSSH SSH Server (sshd)'` |
+| **根本原因** | 1. `Subsystem sftp sftp-server.exe` 在 portable 環境找不到 (portable 在 `C:\Program Files\OpenSSH\`, 不在 PATH)<br/>2. `Banner C:/ProgramData/ssh/banner.txt` 檔案不存在, sshd 啟動讀不到 banner 直接 fail |
+| **解法** | 1. `sshd_config` Subsystem 改 `internal-sftp` (sshd 內建, portable/FoD 都通)<br/>2. `03_install_openssh.ps1` 套 sshd_config 前自動建 banner.txt 預設內容 + ACL<br/>3. Restart-Service 加 try-catch + 友善診斷指引 (Event Log / sshd -t / 還原備份) |
+| **影響檔** | `config/sshd_config`, `deploy/03_install_openssh.ps1` |
+| **Patch** | [v1.0.0.8](../../patches/v1.0.0.8/) |
+| **驗證** | `Restart-Service sshd` 成功; `Get-Service sshd` Running; `Test-NetConnection localhost -Port 22` Succeeded |
+
+---
+
 ## #015 ✅ health_check.ps1 兩處 PS 5.1 / null 崩潰
 
 | 欄位 | 內容 |
