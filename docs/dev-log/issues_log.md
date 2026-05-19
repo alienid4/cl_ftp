@@ -16,6 +16,23 @@
 
 ---
 
+## #011 ✅ Patch UX: 想任意目錄跑 + zip 自動找 + 不要 mirror 第三方 binary
+
+| 欄位 | 內容 |
+|---|---|
+| **發現日期** | 2026-05-19 |
+| **狀態** | ✅ 已解決 (patch v1.0.0.6) |
+| **回報者** | 使用者 (Q: "patches 下載後可以在任何目錄下執行嗎? Win32-OpenSSH Portable 有上傳上去嗎") |
+| **症狀** | 1. apply.ps1 只能在 SF-PROJECT-ROOT 結構下跑<br/>2. install_openssh_portable.ps1 必須帶 -ZipPath, 太煩<br/>3. 使用者期望 release 含 OpenSSH-Win64.zip |
+| **根本原因** | apply.ps1 自動偵測 SF root 假設過嚴; zip 路徑寫死; 沒寫 fetch helper |
+| **解法** | patch v1.0.0.6:<br/>- 新 `install_patch.ps1` 三模式 (auto / `-Here` / `-Target`)<br/>- `install_openssh_portable.ps1` `-ZipPath` 改可選, 自動掃 7 個常用目錄<br/>- 新增 `fetch_openssh_portable.ps1` 給外網 PC 抓 + SHA256 |
+| **為什麼不 mirror Win32-OpenSSH zip** | License/維護負擔 (要追 upstream) + 安全鏈 (使用者直接抓官方更乾淨) + classifier 也擋下載第三方 binary 再 redistribute |
+| **影響檔** | `scripts/install_openssh_portable.ps1`, `scripts/fetch_openssh_portable.ps1`, `patches/v1.0.0.6/` |
+| **Patch** | [v1.0.0.6](../../patches/v1.0.0.6/) |
+| **驗證** | 在任意目錄 `.\install_patch.ps1 -Here` 應拷到當前; install 不帶參數應自動找到 zip |
+
+---
+
 ## #010 ✅ OpenSSH 0x800f0907 + install_offline.ps1 不 idempotent
 
 | 欄位 | 內容 |
