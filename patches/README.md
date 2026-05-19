@@ -96,7 +96,8 @@ Invoke-WebRequest https://raw.githubusercontent.com/alienid4/cl_ftp/main/patches
 | **v1.0.0** | 2026-05-19 | Initial release | 26e945c (tag 1.0) |
 | **v1.0.0.1** | 2026-05-19 | 修 install_offline.ps1 找不到 installers 路徑問題 | 63b725c + e4a4bdf |
 | **v1.0.0.3** | 2026-05-19 | install_offline.ps1 完全 idempotent + 容錯 + OpenSSH FoD 失敗指引 (跳號 v1.0.0.2 對應使用者指定) | 8628176 |
-| **v1.0.0.4** | 2026-05-19 | OpenSSH 內網離線安裝 helper (用 Windows ISO sxs source) | (待 commit) |
+| **v1.0.0.4** | 2026-05-19 | OpenSSH 內網離線安裝 helper (用 Windows ISO sxs source) | 1054c1d |
+| **v1.0.0.5** | 2026-05-19 | OpenSSH Portable 一鍵安裝 (Win32-OpenSSH zip, 5 MB, 不需 FoD/ISO) ⭐ 推薦 | (待 commit) |
 
 ---
 

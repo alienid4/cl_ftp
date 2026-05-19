@@ -21,14 +21,15 @@
 | 欄位 | 內容 |
 |---|---|
 | **發現日期** | 2026-05-19 |
-| **狀態** | ✅ 已解決 (patch v1.0.0.3) |
+| **狀態** | ✅ 已解決 (patch v1.0.0.3 容錯 + v1.0.0.4 ISO 路線 + **v1.0.0.5 portable 路線 ⭐推薦**) |
 | **回報者** | 使用者 (SF 主機跑 install_offline.ps1 紅字錯誤截圖) |
 | **症狀** | Step 07 跑到 OpenSSH 失敗 `Add-WindowsCapability 0x800f0907`, 且整個 script abort, 後面 Python 套件 / deploy 都沒跑 |
-| **根本原因** | 1. `0x800f0907` = 內網無 Windows Update / FoD source<br/>2. `$ErrorActionPreference = 'Stop'` 單錯整 abort<br/>3. 各 step 沒「已裝就 skip」, 重跑會重裝 |
-| **解法** | patch v1.0.0.3:<br/>- 完全 idempotent (每 step check)<br/>- `Continue` + try-catch<br/>- 結尾 summary table<br/>- OpenSSH 4 種 fallback (WSUS / sxs / GUI / 暫開 WU) |
-| **影響檔** | `deploy/offline/install_offline.ps1` |
-| **Patch** | [v1.0.0.3](../../patches/v1.0.0.3/) |
-| **驗證** | 重跑 install, 應看到 idempotent skip + 失敗 step warn 不 abort |
+| **根本原因** | 1. `0x800f0907` = `CBS_E_INVALID_REPAIR_SOURCE`, 內網無 Windows Update / FoD source<br/>2. `$ErrorActionPreference = 'Stop'` 單錯整 abort<br/>3. 各 step 沒「已裝就 skip」, 重跑會重裝<br/>4. IT 給的 sxs 不含 OpenSSH CAB (常見) |
+| **解法 (3 階段)** | **v1.0.0.3** (容錯): 完全 idempotent + Continue + summary table + 不 abort<br/>**v1.0.0.4** (ISO 路線): helper 自動 mount Windows ISO + sxs source + Add-WindowsCapability -LimitAccess<br/>**v1.0.0.5** (Portable 路線 ⭐): 用 PowerShell Team Win32-OpenSSH 5 MB zip, 完全繞過 FoD, 不需 ISO/sxs/WSUS |
+| **影響檔** | `deploy/offline/install_offline.ps1` (v1.0.0.3) / `scripts/install_openssh_offline.ps1` (v1.0.0.4) / `scripts/install_openssh_portable.ps1` (v1.0.0.5) |
+| **Patch** | [v1.0.0.3](../../patches/v1.0.0.3/) / [v1.0.0.4](../../patches/v1.0.0.4/) / [v1.0.0.5](../../patches/v1.0.0.5/) |
+| **建議用哪個** | **v1.0.0.5 portable** — 5 MB zip 取代 5 GB ISO, 不依賴 FoD CAB 版本, GitHub 公開下載 |
+| **驗證** | 重跑 install, OpenSSH step 應變 [skip] 已安裝 + 整體 summary table 全 ok |
 
 ---
 
