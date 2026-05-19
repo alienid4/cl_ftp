@@ -92,7 +92,8 @@ SFTP/
 | [docs/mockup-user.html](docs/mockup-user.html) | 使用者介面 mockup |
 | [docs/mockup-admin.html](docs/mockup-admin.html) | 管理員介面 mockup |
 | [docs/required_packages.md](docs/required_packages.md) | 套件清單 |
-| [docs/deployment_sop.md](docs/deployment_sop.md) | 部署 SOP |
+| [docs/deployment_sop.md](docs/deployment_sop.md) | 部署 SOP (準備階段 + 套件安裝) |
+| [docs/startup_sop.md](docs/startup_sop.md) | **🚀 啟動 SOP** (install 跑完後 8 步, 從套件就緒到第一個檔案流過) |
 | [portal/README.md](portal/README.md) | Portal 開發者指引 |
 | [patches/README.md](patches/README.md) | **Patch 管理規範 + 版本歷史** |
 | [docs/known_issues.md](docs/known_issues.md) | 已知問題 + 解法 (8 個常見坑) |
