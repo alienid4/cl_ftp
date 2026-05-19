@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>SF Portal — 一般使用者介面</title>
+<link rel="stylesheet" href="static/css/cathay.css">
+<link rel="stylesheet" href="static/css/mockup-extra.css">
+</head>
+<body>
+
+  <!-- ===== Navbar ===== -->
+  <nav class="navbar">
+    <a class="navbar-brand">
+      <span class="dot"></span> SF 檔案交換 Portal
+    </a>
+    <ul class="nav-links">
+      <li><a data-page="my-home" class="active">📊 首頁</a></li>
+      <li><a data-page="approval-list">📝 我的待簽</a></li>
+      <li><a data-page="approval-history">📋 我已處理</a></li>
+      <li><a data-page="my-groups">📋 我的群組</a></li>
+      <li><a data-page="my-downloads">📥 我的可下載</a></li>
+    </ul>
+    <div class="nav-user">
+      <div style="text-align:right;">
+        <div class="nu-name">👤 王主管</div>
+        <div class="nu-dept">CORP\wang.manager · 架構科</div>
+      </div>
+      <span class="role-badge role-user">一般使用者</span>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- ===== My Home (首頁) ===== -->
+    <section class="page active" id="page-my-home">
+      <div class="page-header">
+        <h1 style="font-size:22px; font-weight:700; color:var(--c1);">您好, 王主管</h1>
+        <span class="text-muted-sm">最後登入: 2026-05-18 09:12</span>
+      </div>
+
+      <div class="card card-status-warn">
+        <div class="card-title">今日提醒</div>
+        <div style="font-size:15px;">有 <strong>3 件待簽核</strong>項目需要您處理。</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card warn">
+          <div class="kpi-value warn">3</div>
+          <div class="kpi-label">待我簽核</div>
+        </div>
+        <div class="kpi-card ok">
+          <div class="kpi-value ok">12</div>
+          <div class="kpi-label">本月已同意</div>
+        </div>
+        <div class="kpi-card error">
+          <div class="kpi-value error">2</div>
+          <div class="kpi-label">本月已駁回</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-value">5</div>
+          <div class="kpi-label">u01 群組成員</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📌 最近活動</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>時間</th><th>事件</th><th>業務</th><th>對象</th><th>狀態</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="code-inline">05/17 14:32</span></td>
+                <td>新待簽</td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>202604_架構稽核報告.xlsx</td>
+                <td><span class="badge badge-warn">待我處理</span></td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">05/15 16:42</span></td>
+                <td>被他人先處理</td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>202604_資產清單.xlsx</td>
+                <td><span class="badge badge-ok">林副理已同意</span></td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">05/14 10:21</span></td>
+                <td>我同意</td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>架構圖_v2.pdf</td>
+                <td><span class="badge badge-ok">已放行</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📋 您負責的業務代號</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>業務代號</th><th>名稱</th><th>AD 群組</th><th>當前成員</th><th>操作</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>架構科月結報表</td>
+                <td><span class="code-inline">g_u01_approvers</span></td>
+                <td>5 位</td>
+                <td><a class="btn btn-primary btn-sm" data-page="my-groups">管理成員</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="restricted-list">
+        <h4>下列功能您沒有權限 (僅 IT 管理員可用):</h4>
+        <ul>
+          <li>業務代號管理 (新增 / 編輯 / 停用)</li>
+          <li>稽核查詢 (全公司事件)</li>
+          <li>事件鏈追蹤</li>
+          <li>系統健康 / 系統 Log</li>
+          <li>帳號管理</li>
+          <li>samba 路徑變更</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== My Approval List (我的待簽) ===== -->
+    <section class="page" id="page-approval-list">
+      <div class="page-header">
+        <h1 style="font-size:22px; font-weight:700;">📝 我的待簽列表</h1>
+      </div>
+
+      <div class="card card-status-warn">
+        <div class="card-title">ANY 制簽核提示</div>
+        <div style="font-size:14px;">同業務有多位簽核人 (u01 為 5 位), <strong>任 1 同意即放行 / 任 1 駁回即駁回</strong>。請儘速處理以免別人先做。</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title flex-between">
+          <span>待我簽核 (2 批 / 6 檔)</span>
+          <span class="text-muted-sm">批次模式: 1 行 1 批, 可展開細選</span>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" class="input-field" placeholder="🔍 搜尋批次 / 檔名">
+          <select class="input-field">
+            <option>全部業務代號</option>
+            <option>u01 - 架構科月結</option>
+          </select>
+          <select class="input-field">
+            <option>最近 7 天</option>
+            <option>最近 30 天</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:24px;"></th>
+                <th>業務</th><th>批次 ID</th><th>上傳人</th><th>檔數</th>
+                <th>總大小</th><th>上傳時間</th><th>剩餘</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- 批次 1 (預設展開) -->
+              <tr class="batch-summary" data-batch="b1">
+                <td><span class="batch-toggle" data-batch="b1">▼</span></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td><strong style="color:var(--g2);">u01-20260517-1432</strong><br><span class="text-muted-sm">月結 1432</span></td>
+                <td>張小明</td>
+                <td><span class="badge badge-a">5 檔</span></td>
+                <td>8.4 MB</td>
+                <td><span class="code-inline">05/17 14:32</span></td>
+                <td><span class="badge badge-warn">6天 23時</span></td>
+                <td style="white-space:nowrap;">
+                  <button class="btn btn-primary btn-sm">✓ 全收</button>
+                  <button class="btn btn-danger btn-sm">✗ 全退</button>
+                  <button class="btn btn-secondary btn-sm" data-page="approval-detail">細選</button>
+                </td>
+              </tr>
+              <tr class="batch-detail" id="detail-b1">
+                <td colspan="9" style="background:#FAFFF9; padding:14px 24px;">
+                  <div style="font-weight:600; margin-bottom:8px; color:var(--g-text);">📂 批次內檔案 (可在「細選」頁逐個處理)</div>
+                  <table class="data-table" style="margin:0; font-size:13px;">
+                    <thead>
+                      <tr><th>#</th><th>檔名</th><th>大小</th><th>SHA-256</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>1</td><td>月結_客戶清單.csv</td><td>2.1 MB</td><td><span class="code-inline">a3f5...b9e1</span></td></tr>
+                      <tr><td>2</td><td>月結_交易明細.csv</td><td>3.5 MB</td><td><span class="code-inline">b7c8...d3a2</span></td></tr>
+                      <tr><td>3</td><td>月結_對帳.csv</td><td>820 KB</td><td><span class="code-inline">e1f2...4567</span></td></tr>
+                      <tr><td>4</td><td>月結_統計.xlsx</td><td>1.2 MB</td><td><span class="code-inline">8910...abcd</span></td></tr>
+                      <tr><td>5</td><td>月結_附件.zip</td><td>800 KB</td><td><span class="code-inline">ef01...2345</span></td></tr>
+                    </tbody>
+                  </table>
+                  <div class="text-muted-sm" style="margin-top:8px;">
+                    💡 來源: AP-PRD-01 (10.20.5.31) · 透過 SFTP · 滑動 30 秒聚合
+                  </div>
+                </td>
+              </tr>
+
+              <!-- 批次 2 (預設收合) -->
+              <tr class="batch-summary" data-batch="b2">
+                <td><span class="batch-toggle" data-batch="b2">▶</span></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td><strong style="color:var(--g2);">u01-20260516-0915</strong><br><span class="text-muted-sm">網路拓樸 0915</span></td>
+                <td>陳專員</td>
+                <td><span class="badge badge-a">1 檔</span></td>
+                <td>12.6 MB</td>
+                <td><span class="code-inline">05/16 09:15</span></td>
+                <td><span class="badge badge-warn">5天 18時</span></td>
+                <td style="white-space:nowrap;">
+                  <button class="btn btn-primary btn-sm">✓ 全收</button>
+                  <button class="btn btn-danger btn-sm">✗ 全退</button>
+                  <button class="btn btn-secondary btn-sm">細選</button>
+                </td>
+              </tr>
+              <tr class="batch-detail" id="detail-b2" style="display:none;">
+                <td colspan="9" style="background:#FAFFF9; padding:14px 24px;">
+                  <table class="data-table" style="margin:0; font-size:13px;">
+                    <thead><tr><th>#</th><th>檔名</th><th>大小</th></tr></thead>
+                    <tbody>
+                      <tr><td>1</td><td>network_topology_v3.pdf</td><td>12.6 MB</td></tr>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="text-muted-sm" style="margin-top: 12px;">
+          ℹ️ <strong>批次邏輯</strong>: 同 u0X + 同來源 IP + 滑動 30 秒內視為同一批 (5 分鐘安全閥)。<br>
+          您只會看到「您是簽核人」的批次。其他業務 (u02/u03/u04) 的待簽您看不到。
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Approval History (我已處理) ===== -->
+    <section class="page" id="page-approval-history">
+      <div class="page-header">
+        <h1 style="font-size:22px; font-weight:700;">📋 我已處理</h1>
+      </div>
+
+      <div class="card">
+        <div class="card-title">本月歷史紀錄</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>處理時間</th><th>業務</th><th>檔名</th><th>我的決定</th><th>結果</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="code-inline">05/14 10:21</span></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>架構圖_v2.pdf</td>
+                <td><span class="badge badge-ok">同意</span></td>
+                <td>已放行至 <span class="code-inline">\\SF\architecture\</span></td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">05/12 15:40</span></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>異常測試.zip</td>
+                <td><span class="badge badge-error">駁回</span></td>
+                <td>意見: 「檔案有問題, 請重新上傳」</td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">05/08 09:11</span></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>202603_月結.xlsx</td>
+                <td><span class="badge badge-ok">同意</span></td>
+                <td>已放行</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Approval Detail (簽核細節) ===== -->
+    <section class="page" id="page-approval-detail">
+      <div class="page-header">
+        <a class="back-link" data-page="approval-list">← 返回待簽列表</a>
+      </div>
+      <h1 style="font-size:20px; font-weight:700; margin-bottom: 20px;">📄 簽核細節 — 202604_架構稽核報告.xlsx</h1>
+
+      <div class="card">
+        <div class="card-title">基本資訊</div>
+        <div class="detail-grid">
+          <div class="dk">業務代號</div>
+          <div class="dv"><span class="badge badge-a">u01</span> 架構科月結報表</div>
+          <div class="dk">檔名</div>
+          <div class="dv">202604_架構稽核報告.xlsx</div>
+          <div class="dk">SHA-256</div>
+          <div class="dv mono">a3f5b9c2d4e1...b9e1</div>
+          <div class="dk">大小</div>
+          <div class="dv">4,243,712 bytes (4.2 MB)</div>
+          <div class="dk">上傳人</div>
+          <div class="dv">張小明 (PAM 申請: <span class="code-inline">PAM_20260517_00123</span>)</div>
+          <div class="dk">上傳來源</div>
+          <div class="dv mono">AP-PRD-01 (10.20.5.31) · sftp u01@SF</div>
+          <div class="dk">上傳時間</div>
+          <div class="dv mono">2026-05-17 14:32:18 (今日 -2h)</div>
+          <div class="dk">用途說明</div>
+          <div class="dv">本月份架構稽核報告, 提供建檔組同仁進行月底審查作業</div>
+        </div>
+      </div>
+
+      <div class="card card-status-warn">
+        <div class="card-title flex-between">
+          <span>簽核人狀態 (ANY 制 · g_u01_approvers)</span>
+          <span class="badge badge-warn">尚未有人處理</span>
+        </div>
+        <div class="text-muted-sm" style="margin-bottom: 12px;">
+          📋 簽核人名單由業務負責人在「我的群組」頁維護, IT 不介入。當下群組共 <strong>5 位</strong>成員。
+        </div>
+
+        <div class="signer-grid">
+          <div class="signer-item">
+            <div class="si-name">👤 王主管 (你)</div>
+            <div class="si-sub">CORP\wang.manager</div>
+          </div>
+          <div class="signer-item">
+            <div class="si-name">👤 林副理</div>
+            <div class="si-sub">CORP\lin.deputy</div>
+          </div>
+          <div class="signer-item">
+            <div class="si-name">👤 黃組長</div>
+            <div class="si-sub">CORP\huang.lead</div>
+          </div>
+          <div class="signer-item">
+            <div class="si-name">👤 周稽核</div>
+            <div class="si-sub">CORP\chou.audit</div>
+          </div>
+          <div class="signer-item">
+            <div class="si-name">👤 吳資安</div>
+            <div class="si-sub">CORP\wu.security</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">我的決定</div>
+        <div class="form-group">
+          <label>簽核意見</label>
+          <textarea placeholder="(同意可空白, 駁回需填寫原因)" rows="3"></textarea>
+        </div>
+        <div style="display:flex; gap:10px; margin-top: 16px;">
+          <button class="btn btn-primary">✓ 同意放行</button>
+          <button class="btn btn-danger">✗ 駁回</button>
+          <button class="btn btn-secondary" data-page="approval-list">取消</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== My Groups ===== -->
+    <section class="page" id="page-my-groups">
+      <div class="page-header">
+        <h1 style="font-size:22px; font-weight:700;">📋 我的群組 — g_u01_approvers</h1>
+      </div>
+
+      <div class="card card-status-ok">
+        <div class="card-title">業務負責人說明</div>
+        <div style="font-size:14px;">
+          您是 <strong>u01 業務</strong>的負責人, 可自行增減 AD 群組成員 (簽核人名單)。<br>
+          新增 / 移除即時生效, 下次有檔案上傳時依當下名單通知。<br>
+          <strong>IT 不會幫您改, 請自行維護以免漏簽</strong>。
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title flex-between">
+          <span>當前成員 (5 位)</span>
+          <span class="text-muted-sm">最後變動 2026-05-10</span>
+        </div>
+
+        <div class="signer-grid">
+          <div class="signer-item done">
+            <div class="si-name">👤 王主管 (你)</div>
+            <div class="si-sub">CORP\wang.manager</div>
+            <div class="si-actions">
+              <span>加入 04/01</span>
+            </div>
+          </div>
+          <div class="signer-item done">
+            <div class="si-name">👤 林副理</div>
+            <div class="si-sub">CORP\lin.deputy</div>
+            <div class="si-actions">
+              <span>加入 04/01</span>
+              <button class="btn btn-danger btn-sm">移除</button>
+            </div>
+          </div>
+          <div class="signer-item done">
+            <div class="si-name">👤 黃組長</div>
+            <div class="si-sub">CORP\huang.lead</div>
+            <div class="si-actions">
+              <span>加入 04/01</span>
+              <button class="btn btn-danger btn-sm">移除</button>
+            </div>
+          </div>
+          <div class="signer-item done">
+            <div class="si-name">👤 周稽核</div>
+            <div class="si-sub">CORP\chou.audit</div>
+            <div class="si-actions">
+              <span>加入 04/15</span>
+              <button class="btn btn-danger btn-sm">移除</button>
+            </div>
+          </div>
+          <div class="signer-item done">
+            <div class="si-name">👤 吳資安</div>
+            <div class="si-sub">CORP\wu.security</div>
+            <div class="si-actions">
+              <span>加入 05/10</span>
+              <button class="btn btn-danger btn-sm">移除</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px; padding-top:24px; border-top:1px dashed #e0e0e0;">
+          <div class="card-title">➕ 新增成員</div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="text" class="input-field" placeholder="輸入 AD 帳號或姓名搜尋..." style="flex:1;">
+            <button class="btn btn-secondary">查詢</button>
+            <button class="btn btn-primary">加入群組</button>
+          </div>
+          <div class="text-muted-sm" style="margin-top:8px;">
+            加入後該人下次有 u01 上傳會收到通知信, 不需通知 IT。
+          </div>
+        </div>
+      </div>
+
+      <div class="text-muted-sm" style="margin-top: 16px;">
+        ℹ️ 您只能管理「您負責的」業務代號群組。其他業務 (u02 / u03 / u04) 的群組由各自負責人管理, 您不可介入。
+      </div>
+    </section>
+
+    <!-- ===== My Downloads (我的可下載 + 批次 ZIP) ===== -->
+    <section class="page" id="page-my-downloads">
+      <div class="page-header">
+        <h1 style="font-size:22px; font-weight:700;">📥 我的可下載檔案</h1>
+      </div>
+
+      <div class="card card-status-ok">
+        <div class="card-title">使用說明</div>
+        <div style="font-size:14px;">
+          此頁顯示 OA samba 上**您有權下載**的檔案 (依您的 AD 群組過濾)。<br>
+          <strong>多檔下載 3 種方式</strong>:
+          <ol style="margin-top:8px; margin-left:20px;">
+            <li><strong>掛 SMB 拖拉</strong> (推薦) — Windows 檔案總管打 <code class="code-inline">\\SF\architecture\</code> 多選拖到本機, 最快</li>
+            <li><strong>逐個下載</strong> — 點下方 [下載] 按鈕</li>
+            <li><strong>批次打包 ZIP</strong> — 勾選多檔 → 點「📦 打包成 ZIP 下載」, 適合不會掛 SMB 的人</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title flex-between">
+          <span>架構科可下載 (5 檔)</span>
+          <span class="text-muted-sm">samba 路徑: \\SF\architecture\</span>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" class="input-field" placeholder="🔍 搜尋檔名">
+          <select class="input-field">
+            <option>全部來源業務</option>
+            <option>u01 - 架構科月結</option>
+          </select>
+          <select class="input-field">
+            <option>最近 7 天</option>
+            <option>最近 30 天</option>
+          </select>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom: 12px; align-items:center;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:14px;">
+            <input type="checkbox" id="select-all" style="width:18px; height:18px;"> 全選
+          </label>
+          <button class="btn btn-primary btn-sm">📦 打包成 ZIP 下載</button>
+          <button class="btn btn-secondary btn-sm">📥 逐個下載 (選中)</button>
+          <span class="text-muted-sm" style="margin-left:auto;">已選 0 檔, 0 MB</span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:24px;"></th>
+                <th>檔名</th>
+                <th>來源業務</th>
+                <th>放行人</th>
+                <th>大小</th>
+                <th>放行時間</th>
+                <th>到期 (samba 7 天)</th>
+                <th>SHA-256</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox" class="dl-check" style="width:18px; height:18px;"></td>
+                <td><strong style="color:var(--g2);">202604_架構稽核報告.xlsx</strong></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>林副理</td>
+                <td>4.2 MB</td>
+                <td><span class="code-inline">05/17 14:45</span></td>
+                <td><span class="badge badge-warn">6 天 23 時</span></td>
+                <td><span class="code-inline">a3f5...b9e1</span></td>
+                <td><button class="btn btn-primary btn-sm">📥 下載</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="dl-check" style="width:18px; height:18px;"></td>
+                <td><strong style="color:var(--g2);">月結_客戶清單.csv</strong></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>林副理</td>
+                <td>2.1 MB</td>
+                <td><span class="code-inline">05/17 14:45</span></td>
+                <td><span class="badge badge-warn">6 天 23 時</span></td>
+                <td><span class="code-inline">b7c8...d3a2</span></td>
+                <td><button class="btn btn-primary btn-sm">📥 下載</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="dl-check" style="width:18px; height:18px;"></td>
+                <td><strong style="color:var(--g2);">月結_交易明細.csv</strong></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>林副理</td>
+                <td>3.5 MB</td>
+                <td><span class="code-inline">05/17 14:45</span></td>
+                <td><span class="badge badge-warn">6 天 23 時</span></td>
+                <td><span class="code-inline">e1f2...4567</span></td>
+                <td><button class="btn btn-primary btn-sm">📥 下載</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="dl-check" style="width:18px; height:18px;"></td>
+                <td><strong style="color:var(--g2);">架構圖_v2.pdf</strong></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>王主管</td>
+                <td>5.8 MB</td>
+                <td><span class="code-inline">05/14 10:25</span></td>
+                <td><span class="badge badge-warn">3 天 19 時</span></td>
+                <td><span class="code-inline">cd34...ef56</span></td>
+                <td><button class="btn btn-primary btn-sm">📥 下載</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="dl-check" style="width:18px; height:18px;"></td>
+                <td><strong style="color:var(--g2);">202603_架構稽核.xlsx</strong></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>黃組長</td>
+                <td>3.8 MB</td>
+                <td><span class="code-inline">05/12 09:15</span></td>
+                <td><span class="badge badge-error">1 天 14 時</span></td>
+                <td><span class="code-inline">78ab...cdef</span></td>
+                <td><button class="btn btn-primary btn-sm">📥 下載</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📦 批次打包下載 — 流程說明</div>
+        <div style="font-size:14px;">
+          <ol style="margin-left:20px;">
+            <li>勾選您要下載的檔案 (上方表格 checkbox)</li>
+            <li>點「📦 打包成 ZIP 下載」</li>
+            <li>系統後台用 svc_portal 串流讀取 samba 檔案 → 即時打包 (不存中間檔)</li>
+            <li>瀏覽器收到 <code class="code-inline">sf_u01_20260518_xxxx.zip</code></li>
+            <li>AuditLog 記錄: <code class="code-inline">BATCH_ZIP_DOWNLOAD</code> · 您的 AD 帳號 · 包含哪些檔</li>
+            <li>大檔注意: ZIP 不存中間檔, 大檔 (>1GB) 建議改用 SMB 拖拉</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="text-muted-sm" style="margin-top: 16px;">
+        ℹ️ 您只看得到「您 AD 群組有權的」samba 目錄。其他部門 (HR / 財務 / 資安) 您看不到。<br>
+        ℹ️ samba 上的檔案 7 天後自動清空。請及時下載或請放行人重新處理。
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 右下角版本資訊 -->
+  <div class="version-info">
+    <div><span class="v-num">v1.0.0</span> · 一般使用者介面</div>
+    <div class="v-time">更新: <span id="build-time"></span></div>
+  </div>
+
+<script>
+  document.getElementById('build-time').textContent = '2026-05-18 22:50';
+
+  document.querySelectorAll('[data-page]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      const target = el.getAttribute('data-page');
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-links a').forEach(n => n.classList.remove('active'));
+      const targetPage = document.getElementById('page-' + target);
+      if (targetPage) targetPage.classList.add('active');
+      const targetNav = document.querySelector(`.nav-links a[data-page="${target}"]`);
+      if (targetNav) targetNav.classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+
+  // ===== 批次展開/收合 =====
+  document.querySelectorAll('.batch-toggle').forEach(t => {
+    t.addEventListener('click', e => {
+      e.stopPropagation();
+      const batchId = t.getAttribute('data-batch');
+      const detailRow = document.getElementById('detail-' + batchId);
+      if (!detailRow) return;
+      const isHidden = detailRow.style.display === 'none';
+      detailRow.style.display = isHidden ? '' : 'none';
+      t.textContent = isHidden ? '▼' : '▶';
+    });
+  });
+  // 點批次摘要列也能切換
+  document.querySelectorAll('.batch-summary').forEach(row => {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', e => {
+      // 排除按鈕點擊
+      if (e.target.tagName === 'BUTTON') return;
+      const toggle = row.querySelector('.batch-toggle');
+      if (toggle) toggle.click();
+    });
+  });
+
+  // ===== 我的可下載 - 全選 + 統計 =====
+  const selectAll = document.getElementById('select-all');
+  if (selectAll) {
+    selectAll.addEventListener('change', () => {
+      document.querySelectorAll('.dl-check').forEach(c => c.checked = selectAll.checked);
+    });
+  }
+</script>
+
+</body>
+</html>

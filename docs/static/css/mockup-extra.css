@@ -1,0 +1,350 @@
+/* ============================================
+   Mockup 專用額外樣式 (cathay.css 沒涵蓋的部分)
+   ============================================ */
+
+/* ===== Page section toggle (用於 tab-like 切換) ===== */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ===== Navbar 使用者區 + 角色徽章 ===== */
+.nav-user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 14px;
+  color: var(--c2);
+}
+.nav-user .nu-name { font-weight: 600; color: var(--c1); }
+.nav-user .nu-dept { color: var(--c3); font-size: 12px; }
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: "JetBrains Mono", monospace;
+}
+.role-user { background: var(--g-light); color: var(--g-text); }
+.role-admin {
+  background: #FFF3E0;
+  color: #B8660B;
+  box-shadow: 0 0 0 2px rgba(232,124,7,0.2);
+}
+
+/* ===== Admin 警示帶 (常駐提示「管理員操作會留痕」) ===== */
+.admin-warning-bar {
+  background: #FFF8E1;
+  color: #B8660B;
+  padding: 8px 32px;
+  border-bottom: 2px solid var(--orange);
+  font-size: 13px;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ===== 受限提示 (一般使用者首頁顯示「您看不到的功能」) ===== */
+.restricted-list {
+  background: var(--bg2);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-top: 16px;
+  border: 1px dashed var(--c4);
+}
+.restricted-list h4 {
+  color: var(--c3);
+  font-size: 14px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.restricted-list ul { list-style: none; padding: 0; }
+.restricted-list li {
+  padding: 6px 0;
+  color: var(--c3);
+  font-size: 13px;
+}
+.restricted-list li::before { content: "🚫 "; }
+
+/* ===== 詳細資料 grid ===== */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px 24px;
+  margin-bottom: 16px;
+}
+.detail-grid .dk { color: var(--c3); font-weight: 600; font-size: 13px; }
+.detail-grid .dv { color: var(--c1); font-size: 14px; }
+.detail-grid .dv.mono {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+}
+
+/* ===== 簽核人卡片 grid ===== */
+.signer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.signer-item {
+  border: 1px solid #e8e8e8;
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  background: var(--white);
+}
+.signer-item.done {
+  background: #FAFFF9;
+  border-color: rgba(38,168,137,0.4);
+}
+.signer-item .si-name { font-weight: 700; font-size: 14px; }
+.signer-item .si-sub {
+  color: var(--c3);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.signer-item .si-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--c3);
+}
+
+/* ===== 事件鏈時間軸 ===== */
+.timeline {
+  position: relative;
+  padding-left: 28px;
+  margin-top: 12px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: #e0e0e0;
+}
+.tl-item {
+  position: relative;
+  padding-bottom: 16px;
+}
+.tl-item::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--g1);
+  border: 2px solid var(--white);
+  box-shadow: 0 0 0 2px var(--g1);
+}
+.tl-pam::before {
+  background: var(--orange);
+  box-shadow: 0 0 0 2px var(--orange);
+}
+.tl-ap::before {
+  background: #8b5cf6;
+  box-shadow: 0 0 0 2px #8b5cf6;
+}
+.tl-smb::before {
+  background: var(--red);
+  box-shadow: 0 0 0 2px var(--red);
+}
+.tl-time {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--c3);
+}
+.tl-title {
+  font-weight: 600;
+  margin-top: 2px;
+  font-size: 14px;
+}
+.tl-meta {
+  font-size: 12px;
+  color: var(--c2);
+  margin-top: 2px;
+}
+
+/* ===== Health 卡片 grid (Dashboard 用) ===== */
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+.health-item {
+  background: var(--white);
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--g1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.health-item.warn { border-left-color: var(--orange); }
+.health-item.bad { border-left-color: var(--red); }
+.health-item .hi-icon { font-size: 22px; }
+.health-item .hi-name { font-weight: 700; font-size: 14px; }
+.health-item .hi-status {
+  font-size: 12px;
+  color: var(--c3);
+  margin-top: 2px;
+}
+.health-item.warn .hi-status { color: #B8660B; }
+.health-item.bad .hi-status { color: var(--red); }
+
+/* ===== 二次確認對話框 (samba 路徑變更) ===== */
+.danger-box {
+  background: #FFEBEE;
+  border: 2px solid var(--red);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-top: 16px;
+}
+.danger-box h3 {
+  color: #B71C1C;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.step-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  counter-reset: stepc;
+}
+.step-list li {
+  counter-increment: stepc;
+  padding: 12px 14px 12px 48px;
+  position: relative;
+  background: var(--white);
+  border-radius: var(--radius-xs);
+  margin-bottom: 6px;
+  font-size: 13px;
+  border-left: 4px solid var(--red);
+}
+.step-list li::before {
+  content: counter(stepc);
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 26px;
+  height: 26px;
+  background: var(--red);
+  color: var(--white);
+  border-radius: 50%;
+  text-align: center;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 26px;
+}
+.step-list li code.code-inline {
+  background: #FFCDD2;
+  color: #B71C1C;
+}
+
+.side-effects {
+  background: #FFF8E1;
+  border-left: 4px solid var(--orange);
+  padding: 12px 16px;
+  border-radius: var(--radius-xs);
+  margin-top: 12px;
+  font-size: 13px;
+  color: #B8660B;
+}
+.side-effects ul { margin: 6px 0 0 18px; }
+.side-effects li { margin-bottom: 4px; }
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.check-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+/* ===== Sub navigation (admin 用的子分類 tab) ===== */
+.sub-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.sub-nav a {
+  padding: 8px 16px;
+  color: var(--c3);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+}
+.sub-nav a:hover { color: var(--c2); }
+.sub-nav a.active {
+  color: var(--g1);
+  border-bottom-color: var(--g1);
+}
+
+/* ===== Current path display ===== */
+.current-path {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 15px;
+  background: var(--bg);
+  padding: 10px 14px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--c4);
+  display: inline-block;
+  color: var(--c1);
+}
+
+/* ===== 左下角版本資訊 ===== */
+.version-info {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #e2e8f0;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: "JetBrains Mono", monospace;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  line-height: 1.5;
+}
+.version-info .v-num { color: var(--g1); font-weight: 700; }
+.version-info .v-time { color: #94a3b8; }
+.version-info.admin .v-num { color: var(--orange); }
+.version-info.admin {
+  border-left: 3px solid var(--orange);
+}
+
+/* ===== Nav-link 自訂 active 樣式 (cathay 預設配合 anchor, mockup 用 click) ===== */
+.nav-links a { cursor: pointer; }
+
+/* ===== Filter row (查詢條件 grid) ===== */
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.filter-grid .input-field { padding: 8px 12px; font-size: 13px; }

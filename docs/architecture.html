@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>SF 中繼檔案交換主機 — 架構圖</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Noto Sans TC", "Microsoft JhengHei", -apple-system, sans-serif;
+    background: #f5f7fa;
+    color: #1f2937;
+    margin: 0;
+    padding: 32px 24px 64px;
+    line-height: 1.6;
+  }
+  .container { max-width: 1240px; margin: 0 auto; }
+  header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+    color: #fff;
+    padding: 28px 32px;
+    border-radius: 12px;
+    margin-bottom: 28px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  header h1 {
+    margin: 0 0 8px;
+    font-size: 24px;
+    letter-spacing: 0.5px;
+  }
+  header .sub {
+    color: #cbd5e1;
+    font-size: 14px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 16px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+  }
+  .card-head h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .card-head h2 .badge {
+    background: #1e3a8a;
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .card-head .desc {
+    margin-top: 6px;
+    color: #6b7280;
+    font-size: 13px;
+  }
+  .card-body {
+    padding: 24px;
+    overflow-x: auto;
+  }
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px dashed #e5e7eb;
+    font-size: 13px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .legend-item .dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+  .dot-prd { background: #fee2e2; border: 2px solid #ef4444; }
+  .dot-oa  { background: #dbeafe; border: 2px solid #3b82f6; }
+  .dot-sf  { background: #ecfccb; border: 2px solid #65a30d; }
+  .dot-dep { background: #fef3c7; border: 2px solid #d97706; }
+  .mermaid { text-align: center; min-height: 200px; }
+  .note {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 16px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: #78350f;
+    border-radius: 4px;
+  }
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px dashed #e5e7eb;
+  }
+  .meta-item {
+    background: #f9fafb;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+  }
+  .meta-item .k {
+    color: #6b7280;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .meta-item .v {
+    color: #0f172a;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  footer {
+    text-align: center;
+    margin-top: 32px;
+    color: #9ca3af;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <h1>SF 中繼檔案交換主機 — 架構與流程</h1>
+    <div class="sub">Windows Server + OpenSSH SFTP + SMB Share + Portal (簽核 / 業務管理 / 稽核) · AD-joined · PAM 控管</div>
+  </header>
+
+  <!-- 圖 1: 總覽 -->
+  <div class="card">
+    <div class="card-head">
+      <h2><span class="badge">圖 1</span>總覽架構</h2>
+      <div class="desc">OA / PRD 雙網段, SF 跨在中間, AD 與 PAM 為依賴系統</div>
+    </div>
+    <div class="card-body">
+      <div class="mermaid">
+flowchart LR
+    subgraph PRD["🔴 PRD 網段"]
+        U1["👤 使用者<br/>上傳人"]
+        AP["🖥️ AP 主機<br/>Linux / Windows 混合"]
+    end
+
+    subgraph SF["🟢 SF · Windows Server (已加入 AD)"]
+        direction TB
+        SSH["OpenSSH<br/>SFTP Service<br/>TCP 22"]
+        POR["Portal<br/>IIS + Flask<br/>HTTPS 443"]
+        SMB["Windows<br/>SMB Server<br/>TCP 445"]
+        HOME[("📂 D:\DataExchange\home\u01\<br/>7 天保留")]
+        SAMBA[("📂 D:\DataExchange\samba\&lt;dept&gt;\<br/>7 天保留")]
+        DB[("🗄️ SQL Express<br/>AuditLog<br/>含 chain_id / source_system")]
+        SSH --> HOME
+        HOME -. ⑤ 簽核通過自動搬檔 .-> SAMBA
+        SAMBA --> SMB
+        SSH -.log.-> DB
+        POR -.log.-> DB
+        SMB -.SACL log.-> DB
+    end
+
+    subgraph OA["🔵 OA 網段"]
+        U2["👤 USER<br/>下載人"]
+    end
+
+    AD["🏛️ AD 網域<br/>使用者帳號 / 部門群組 / 簽核者群組"]
+    PAM["🔐 PAM 系統 (客製)<br/>AP01 + u01...u0N 密碼納管 + Rotate"]
+
+    U1 -->|① 申請 AP01| PAM
+    U1 -->|② RDP/SSH 登入| AP
+    AP -->|③ 申請 u01 密碼| PAM
+    AP -->|④ sftp u01@SF| SSH
+
+    U1 -.AD 認證.-> POR
+    U2 -->|⑦ 掛載 SMB| SMB
+
+    AD -.使用者認證.-> POR
+    AD -.SMB 認證.-> SMB
+    AD -.SF 已加網域.-> SF
+    PAM -.密碼納管.-> SSH
+
+    classDef prd fill:#fee2e2,stroke:#ef4444,stroke-width:2px
+    classDef oa fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
+    classDef sf fill:#ecfccb,stroke:#65a30d,stroke-width:2px
+    classDef dep fill:#fef3c7,stroke:#d97706,stroke-width:2px
+
+    class PRD prd
+    class OA oa
+    class SF sf
+    class AD,PAM dep
+      </div>
+
+      <div class="legend">
+        <div class="legend-item"><div class="dot dot-prd"></div><div><strong>PRD 網段</strong><br>正式環境, 上傳人從這裡操作</div></div>
+        <div class="legend-item"><div class="dot dot-sf"></div><div><strong>SF 主機</strong><br>中繼檔案交換主機, 跨兩網段</div></div>
+        <div class="legend-item"><div class="dot dot-oa"></div><div><strong>OA 網段</strong><br>辦公網段, USER 下載端</div></div>
+        <div class="legend-item"><div class="dot dot-dep"></div><div><strong>依賴系統</strong><br>AD 認證 + PAM 密碼納管</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 圖 2: 時序 -->
+  <div class="card">
+    <div class="card-head">
+      <h2><span class="badge">圖 2</span>一次上傳 / 下載 完整時序</h2>
+      <div class="desc">從 PAM 申請到 USER 下載, 每一步的稽核紀錄落點</div>
+    </div>
+    <div class="card-body">
+      <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor U as 使用者
+    participant P as 🔐 PAM
+    participant AP as 🖥️ AP 主機
+    participant S as 🟢 SF · SFTP
+    participant POR as 🟢 SF · Portal
+    actor R as 簽核人 (5 人)
+    participant SMB as 🟢 SF · SMB Share
+    actor US as 👤 USER (OA)
+
+    U->>P: 申請 AP01 密碼
+    P-->>U: AP01 密碼 [PAM log]
+    U->>AP: RDP/SSH 登入 AP01 [AP OS log]
+    AP->>P: 申請 u01 密碼
+    P-->>AP: u01 一次性密碼 [PAM log]
+    AP->>S: sftp u01@SF 上傳檔案
+    S->>S: 落 /home/u01/ (7 天保留)
+    Note over S: AuditLog: source_system=SFTP
+    S->>POR: 偵測新檔, 觸發簽核
+    POR->>R: 寄 mail + Portal 通知 (5 位)
+    alt 任 1 位同意 (ANY 制)
+        R->>POR: 同意 [AD 認證]
+        POR->>SMB: mv 到 /samba/&lt;dept&gt;/
+        Note over SMB: 7 天保留, 倒數開始
+        POR->>US: 通知部門可下載
+    else 任 1 位駁回
+        R->>POR: 駁回
+        POR-->>U: 通知駁回, 7 天後 home 刪檔
+    else 7 天未簽核
+        Note over POR: 自動駁回, 視同放棄, 重新申請
+    end
+    US->>SMB: AD 帳號掛 \\SF\&lt;dept&gt;\
+    SMB-->>US: 下載檔案 [SACL log]
+    Note over SMB: AuditLog: source_system=SMB
+      </div>
+
+      <div class="note">
+        <strong>chain_id 串接 (階段二):</strong>
+        PAM_REQ_yyyymmdd_001 (AP01) → PAM_REQ_yyyymmdd_002 (u01) → SF_SFTP_xxx (上傳) → SF_PORTAL_xxx (簽核) → SF_SMB_xxx (下載) — 將來可在 Portal 稽核查詢頁一頁顯示。
+      </div>
+    </div>
+  </div>
+
+  <!-- 圖 3: SF 內部模組 -->
+  <div class="card">
+    <div class="card-head">
+      <h2><span class="badge">圖 3</span>SF 主機 內部模組與資料流</h2>
+      <div class="desc">給開發 / 部署用 — 各模組 log 統一收進 AuditLog, 由 Portal 查詢頁呈現</div>
+    </div>
+    <div class="card-body">
+      <div class="mermaid">
+flowchart TB
+    subgraph SF["SF · Windows Server (AD-joined)"]
+        direction TB
+
+        subgraph SVC["對外服務層"]
+            SSH["OpenSSH sshd<br/>TCP 22"]
+            IIS["IIS + Flask Portal<br/>TCP 443 · AD Auth"]
+            SMBs["Windows SMB Server<br/>TCP 445 · AD Auth + SACL"]
+        end
+
+        subgraph TASK["排程與工作層"]
+            T1["7 天清理<br/>home + samba"]
+            T2["簽核超時自動駁回"]
+            T3["業務代號管理同步<br/>(新增/停用 u0X)"]
+        end
+
+        subgraph LOG["Log 收斂層"]
+            EVT["Windows Event Log"]
+            APP["Portal 應用 log"]
+            PARSER["Log Parser<br/>(PowerShell)"]
+        end
+
+        subgraph DATA["資料層"]
+            FS[("檔案系統<br/>home\u0X + samba\&lt;dept&gt;")]
+            DB[("SQL Express<br/>AuditLog DB")]
+        end
+
+        subgraph UI["管理 UI"]
+            P1["📝 簽核頁<br/>(我的待簽 + ANY 制處理)"]
+            P2["⚙️ 業務代號管理頁<br/>(u0X CRUD + 簽核人 + 部門)"]
+            P3["🔍 稽核查詢頁<br/>(多條件 + CSV 匯出)"]
+        end
+
+        SSH --> FS
+        SMBs --> FS
+        IIS --> P1
+        IIS --> P2
+        IIS --> P3
+
+        SSH --> EVT
+        SMBs --> EVT
+        IIS --> APP
+
+        EVT --> PARSER
+        APP --> PARSER
+        T1 --> FS
+        T2 --> DB
+        T3 --> FS
+        T3 --> DB
+
+        PARSER --> DB
+        DB --> P3
+        DB --> P1
+    end
+
+    EXT_PAM["🔐 PAM (階段二)<br/>提供 PAM 申請 ID 給 chain_id"]
+    EXT_SIEM["📊 SIEM (未來)<br/>透過 CEF / syslog 接走"]
+
+    EXT_PAM -.階段二 拉 log.-> PARSER
+    DB -.未來 forwarder.-> EXT_SIEM
+      </div>
+
+      <div class="meta">
+        <div class="meta-item"><div class="k">第一階段</div><div class="v">SFTP / SMB / Portal / AuditLog</div></div>
+        <div class="meta-item"><div class="k">第二階段</div><div class="v">PAM chain_id 串接</div></div>
+        <div class="meta-item"><div class="k">未來</div><div class="v">SIEM forwarder</div></div>
+        <div class="meta-item"><div class="k">保留期</div><div class="v">home 7 天 + samba 7 天</div></div>
+        <div class="meta-item"><div class="k">簽核制度</div><div class="v">5 人 ANY 制 (任 1 同意即放行)</div></div>
+        <div class="meta-item"><div class="k">認證</div><div class="v">AD (Portal/SMB) + PAM (SFTP)</div></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    SF 中繼檔案交換主機 · 規畫文件 · 此檔僅供討論用, 開瀏覽器即可瀏覽
+  </footer>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    securityLevel: 'loose',
+    flowchart: {
+      curve: 'basis',
+      padding: 16,
+      nodeSpacing: 50,
+      rankSpacing: 60
+    },
+    sequence: {
+      actorMargin: 60,
+      width: 140,
+      mirrorActors: false,
+      bottomMarginAdj: 10,
+      messageMargin: 35
+    }
+  });
+</script>
+
+</body>
+</html>

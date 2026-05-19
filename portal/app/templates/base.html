@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>{% block title %}SF Portal{% endblock %} · 中繼檔案交換</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cathay.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mockup-extra.css') }}">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar">
+    <a class="navbar-brand" href="{{ url_for('main.home') }}">
+        <span class="dot"></span> SF 檔案交換 Portal
+    </a>
+    {% if current_user.is_authenticated %}
+    <ul class="nav-links">
+        <li><a href="{{ url_for('main.home') }}">📊 首頁</a></li>
+        <li><a href="{{ url_for('approval.list_view') }}">📝 我的待簽</a></li>
+        {% if current_user.is_admin %}
+        <li><a href="{{ url_for('admin.biz_list') }}">⚙️ 業務代號</a></li>
+        <li><a href="{{ url_for('audit.query_view') }}">🔍 稽核</a></li>
+        <li><a href="{{ url_for('admin.health') }}">💚 健康</a></li>
+        {% endif %}
+    </ul>
+    <div class="nav-user">
+        <div style="text-align:right;">
+            <div class="nu-name">{{ current_user.display_name }}</div>
+            <div class="nu-dept">{{ current_user.ad_account }}{% if current_user.department %} · {{ current_user.department }}{% endif %}</div>
+        </div>
+        {% if current_user.is_admin %}
+        <span class="role-badge role-admin">SYSTEM ADMIN</span>
+        {% else %}
+        <span class="role-badge role-user">一般使用者</span>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm">登出</a>
+    </div>
+    {% endif %}
+</nav>
+
+{% if current_user.is_authenticated and current_user.is_admin %}
+<div class="admin-warning-bar">
+    🛡️ 您目前以「管理員」身分登入 — 所有操作會被稽核
+</div>
+{% endif %}
+
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, msg in messages %}
+                <div class="card card-status-{{ 'ok' if category == 'success' else 'warn' if category == 'warn' else 'error' if category == 'error' else 'ok' }}" style="margin-bottom: 16px;">
+                    {{ msg }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</div>
+
+<div class="version-info">
+    <div><span class="v-num">v1.0.0</span> · SF Portal</div>
+    <div class="v-time">{{ now }}</div>
+</div>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

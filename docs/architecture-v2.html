@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>SF 中繼檔案交換主機 — Z 方案完整版架構圖</title>
+<link rel="stylesheet" href="static/css/cathay.css">
+<link rel="stylesheet" href="static/css/mockup-extra.css">
+<style>
+  /* 對應主管圖風格的 box layout */
+  .arch-section {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+  }
+  .arch-section h3 {
+    color: var(--g-text);
+    font-size: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--g-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .arch-section h3 .add {
+    background: var(--orange);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: auto;
+  }
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  .arch-item {
+    background: var(--bg);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--g1);
+    font-size: 14px;
+  }
+  .arch-item.added {
+    border-left-color: var(--orange);
+    background: #FFFAF5;
+  }
+  .arch-item .title {
+    font-weight: 700;
+    color: var(--c1);
+    margin-bottom: 4px;
+  }
+  .arch-item .desc {
+    color: var(--c2);
+    font-size: 13px;
+  }
+  .arch-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 1100px) {
+    .arch-row { grid-template-columns: 1fr; }
+  }
+  .seg-prd { background: linear-gradient(135deg, #FFEBEE 0%, #FFF5F5 100%); border-radius: var(--radius); padding: 20px; border: 2px solid #FFCDD2; }
+  .seg-sf { background: linear-gradient(135deg, #E8F5E9 0%, #F0FAF1 100%); border-radius: var(--radius); padding: 20px; border: 2px solid #A5D6A7; }
+  .seg-oa { background: linear-gradient(135deg, #E3F2FD 0%, #F0F8FF 100%); border-radius: var(--radius); padding: 20px; border: 2px solid #90CAF9; }
+  .seg-title {
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .seg-prd .seg-title { color: #C62828; }
+  .seg-sf .seg-title { color: var(--g2); }
+  .seg-oa .seg-title { color: #1565C0; }
+
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+  .comp-table th, .comp-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .comp-table th {
+    background: var(--bg);
+    color: var(--c2);
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .comp-table .same { background: #F0FAF1; color: var(--g-text); font-weight: 600; text-align: center; }
+  .comp-table .added { background: #FFF3E0; color: #B8660B; font-weight: 600; text-align: center; }
+  .comp-table .pending { background: #FFF8E1; color: #8a5b00; text-align: center; }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--c2);
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+  }
+  .legend-base { background: var(--g1); }
+  .legend-add { background: var(--orange); }
+
+  .arrow-down {
+    text-align: center;
+    color: var(--c3);
+    font-size: 24px;
+    margin: 8px 0;
+  }
+
+  .summary-banner {
+    background: linear-gradient(90deg, var(--g-light) 0%, #FFFAF5 100%);
+    border-left: 6px solid var(--g1);
+    border-right: 6px solid var(--orange);
+    padding: 20px 24px;
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  .summary-banner h2 {
+    color: var(--c1);
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a class="navbar-brand">
+      <span class="dot"></span> SF 中繼檔案交換主機 — 架構圖 (Z 方案完整版)
+    </a>
+    <div class="nav-user">
+      <span class="role-badge role-admin">v2.0</span>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <div class="summary-banner">
+      <h2>📐 Z 方案 = 主管基礎架構 + 3 大增值</h2>
+      <strong>100% 沿用</strong>: 主管圖所有元素 (SFTP/FTPS · PAM 納管 · NTFS ACL · 防火牆 IP 白名單 · 完整周邊備份/監控/防毒/NTP/弱掃 · SIEM 預留)。<br>
+      <strong>3 大增值疊加</strong>:
+      <span style="background:var(--orange); color:white; padding:2px 8px; border-radius:4px; margin:0 4px;">①</span> OA 端 USER 取檔通道 (SMB + Portal ZIP)
+      <span style="background:var(--orange); color:white; padding:2px 8px; border-radius:4px; margin:0 4px;">②</span> 業務 ANY 制簽核 + AD 群組自助維護
+      <span style="background:var(--orange); color:white; padding:2px 8px; border-radius:4px; margin:0 4px;">③</span> Portal 集中視覺化 (健康/稽核/Log)
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot legend-base"></div>沿用主管圖</div>
+      <div class="legend-item"><div class="legend-dot legend-add"></div>Z 方案增值</div>
+    </div>
+
+    <!-- ===== 三段網路區域 ===== -->
+    <div class="arch-row">
+
+      <!-- PRD 網段 -->
+      <div class="seg-prd">
+        <div class="seg-title">🔴 PRD 網段 (上傳端)</div>
+        <div style="display: grid; gap: 8px;">
+          <div class="arch-item">
+            <div class="title">部門系統 / AP 主機 (Linux/Win)</div>
+            <div class="desc">HR / FIN / OPS 等批次系統</div>
+          </div>
+          <div class="arch-item">
+            <div class="title">授權人員 (使用 SFTP Client)</div>
+            <div class="desc">向 PAM 申請 AP01 → 登入 AP → 申請 u01</div>
+          </div>
+          <div class="arch-item">
+            <div class="title">PAM 系統</div>
+            <div class="desc">u0X 密碼揭露, 自動 rotate</div>
+          </div>
+          <div style="text-align: center; font-size: 13px; color: #C62828; padding-top: 8px;">
+            ⬇ SFTP TCP 22 (主) / FTPS TCP 21 (備)<br>
+            僅授權來源 IP 白名單
+          </div>
+        </div>
+      </div>
+
+      <!-- SF 主機 -->
+      <div class="seg-sf">
+        <div class="seg-title">🟢 SF Windows Server (AD-joined)</div>
+        <div style="display: grid; gap: 8px;">
+          <div class="arch-item">
+            <div class="title">檔案傳輸服務</div>
+            <div class="desc">OpenSSH SFTP (主) + IIS FTP Server FTPS (備案)</div>
+          </div>
+          <div class="arch-item">
+            <div class="title">認證與帳號</div>
+            <div class="desc">本機 u0X 業務代號 + PAM 納管 + 帳號分群</div>
+          </div>
+          <div class="arch-item">
+            <div class="title">目錄與權限</div>
+            <div class="desc">D:\DataExchange\u0X\{inbound,pending,processing,archive,error}</div>
+          </div>
+          <div class="arch-item added">
+            <div class="title">Web Portal (IIS+Flask, AD Auth)</div>
+            <div class="desc">簽核 + 業務管理 + 稽核 + 健康 + Log + 我的可下載</div>
+          </div>
+          <div class="arch-item added">
+            <div class="title">SMB Server (TCP 445)</div>
+            <div class="desc">OA USER 用 AD 帳號掛 \\SF\&lt;dept&gt;\ + SACL audit</div>
+          </div>
+          <div class="arch-item added">
+            <div class="title">批次聚合排程</div>
+            <div class="desc">滑動 30 秒 + 5 分鐘安全閥 → 聚合通知</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OA 網段 + 正式環境 -->
+      <div class="seg-oa">
+        <div class="seg-title">🔵 OA 網段 (下載端)</div>
+        <div style="display: grid; gap: 8px;">
+          <div class="arch-item">
+            <div class="title">正式環境伺服器 A/B 系統</div>
+            <div class="desc">透過 SFTP (TCP 22) 自動拉資料 (給機器)</div>
+          </div>
+          <div class="arch-item added">
+            <div class="title">OA 端 USER (人)</div>
+            <div class="desc">掛 SMB 用檔案總管 Ctrl+A 拖, 最快</div>
+          </div>
+          <div class="arch-item added">
+            <div class="title">不會掛 SMB 的 USER</div>
+            <div class="desc">Portal「我的可下載」 → 多選 → 打包 ZIP</div>
+          </div>
+          <div style="text-align: center; font-size: 13px; color: #1565C0; padding-top: 8px;">
+            ⬇ SMB TCP 445 (人) / SFTP TCP 22 (機器) / HTTPS 443 (Portal ZIP)<br>
+            AD 群組授權 + NTFS ACL
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== 主管圖完整周邊 (所有都對齊) ===== -->
+    <div class="arch-section">
+      <h3>🛡️ 安全 / 監控 / 備份 / 整合周邊 (對齊主管圖)</h3>
+      <div class="arch-grid">
+        <div class="arch-item"><div class="title">🔥 防火牆</div><div class="desc">必要 Port + IP 白名單 + 阻擋未授權 + 連線紀錄</div></div>
+        <div class="arch-item"><div class="title">🔐 PAM 帳號納管</div><div class="desc">集中納管 + 密碼輪替 + 申請核准 + 使用紀錄</div></div>
+        <div class="arch-item"><div class="title">📋 稽核紀錄</div><div class="desc">Event Log + SFTP Log + 登入/檔案/權限 + 防火牆</div></div>
+        <div class="arch-item"><div class="title">💾 備份與保存</div><div class="desc">資料目錄 + 設定檔 + ACL/帳號 + 30 天保留</div></div>
+        <div class="arch-item"><div class="title">📊 監控與告警</div><div class="desc">PerfMon + CPU/Mem/Disk + 容量配額 (FSRM)</div></div>
+        <div class="arch-item"><div class="title">🛡️ 安全防護</div><div class="desc">Defender EDR + Windows Update + Hardening + 弱掃</div></div>
+        <div class="arch-item"><div class="title">🕒 NTP 時間同步</div><div class="desc">同步公司 NTP, 確保 AuditLog 時間正確</div></div>
+        <div class="arch-item"><div class="title">🔗 其他整合</div><div class="desc">AD (本案), SIEM (階段二), 工單 (不在範圍)</div></div>
+      </div>
+    </div>
+
+    <!-- ===== 增值 1: OA USER 取檔 ===== -->
+    <div class="arch-section">
+      <h3>① 增值: OA 端 USER 取檔通道<span class="add">+ 主管圖沒涵蓋</span></h3>
+      <div style="font-size: 14px; color: var(--c2); margin-bottom: 12px;">
+        主管圖下載端是「正式環境系統」, 只給機器拉。本方案補一條「給人用」的下載通道, 3 種選法依需求:
+      </div>
+      <div class="arch-grid">
+        <div class="arch-item added">
+          <div class="title">🖱️ SMB 掛載拖拉 (推薦)</div>
+          <div class="desc">檔案總管打 \\SF\architecture\ Ctrl+A 拖到本機, 最快</div>
+        </div>
+        <div class="arch-item added">
+          <div class="title">📦 Portal 批次 ZIP</div>
+          <div class="desc">瀏覽器勾多檔 → 打包成 ZIP, 不會掛 SMB 的人用</div>
+        </div>
+        <div class="arch-item added">
+          <div class="title">📥 Portal 逐個下載</div>
+          <div class="desc">瀏覽器點檔案 [下載], 適合單檔</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 增值 2: 簽核 ===== -->
+    <div class="arch-section">
+      <h3>② 增值: 業務 ANY 制簽核 + AD 群組自助維護<span class="add">+ 補純技術 ACL 缺口</span></h3>
+      <div style="font-size: 14px; color: var(--c2); margin-bottom: 12px;">
+        主管圖純技術 ACL, 沒擋「上傳錯檔 / 外流敏感資料」風險。本方案加業務分權:
+      </div>
+      <div class="arch-grid">
+        <div class="arch-item added">
+          <div class="title">📝 5 人 ANY 制</div>
+          <div class="desc">任 1 同意即放行 / 任 1 駁回即駁回, 不卡業務</div>
+        </div>
+        <div class="arch-item added">
+          <div class="title">📋 批次簽核</div>
+          <div class="desc">同 u0X 5 分鐘內檔案聚合, 1 行 1 批, 可展開細選</div>
+        </div>
+        <div class="arch-item added">
+          <div class="title">👥 AD 群組自助維護</div>
+          <div class="desc">業務負責人在 Portal「我的群組」自己加減成員, IT 不介入</div>
+        </div>
+        <div class="arch-item added">
+          <div class="title">⏰ 7 天保留 + 超時駁回</div>
+          <div class="desc">home 7 天 + samba 7 天, 超時視同放棄</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 增值 3: 集中視覺化 ===== -->
+    <div class="arch-section">
+      <h3>③ 增值: Portal 集中視覺化<span class="add">+ SIEM 上線前的橋接</span></h3>
+      <div style="font-size: 14px; color: var(--c2); margin-bottom: 12px;">
+        主管圖 Log 直接丟 SIEM, 但 SIEM 上線前 IT 怎麼查? 本方案 Portal 自帶:
+      </div>
+      <div class="arch-grid">
+        <div class="arch-item added">
+          <div class="title">🔍 全公司稽核查詢</div>
+          <div class="desc">多條件查 + CSV 匯出 + GPT 分析 (去識別化)</div>
+        </div>
+        <div class="arch-item added">
+          <div class="title">🔗 事件鏈追蹤</div>
+          <div class="desc">PAM → AP → SF → SMB 一頁顯示 (階段二)</div>
+        </div>
+        <div class="arch-item added">
+          <div class="title">💚 系統健康儀表板</div>
+          <div class="desc">服務狀態 + 排程 + 容量, 不用 RDP</div>
+        </div>
+        <div class="arch-item added">
+          <div class="title">📜 系統 Log 集中頁</div>
+          <div class="desc">Portal/IIS/OpenSSH/SMB/SQL/Scheduled 6 來源切換</div>
+        </div>
+        <div class="arch-item added">
+          <div class="title">📦 Debug Bundle 收集</div>
+          <div class="desc">一鍵打包 (去識別化) → 給 GPT Enterprise 分析</div>
+        </div>
+        <div class="arch-item added">
+          <div class="title">🚀 SIEM 漸進整合</div>
+          <div class="desc">AuditLog 預留 CEF/syslog 欄位, 階段二一個 forwarder 接上</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 主管圖 vs Z 方案 完整對照 ===== -->
+    <div class="arch-section">
+      <h3>📋 完整對照: 主管圖每一項 vs Z 方案</h3>
+      <table class="comp-table">
+        <thead>
+          <tr><th>主管圖模組</th><th>項目</th><th>狀態</th></tr>
+        </thead>
+        <tbody>
+          <tr><td rowspan="3">檔案傳輸服務</td><td>SFTP (OpenSSH)</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>FTPS (IIS FTP, TLS, 預設停用)</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>同帳號雙協定</td><td class="same">✓ 沿用</td></tr>
+
+          <tr><td rowspan="3">認證與帳號</td><td>Windows 本機帳號 (u0X)</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>PAM 納管 + 密碼揭露</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>帳號分群 (sftp_users / AD g_u0X_approvers)</td><td class="same">✓ 沿用</td></tr>
+
+          <tr><td rowspan="4">目錄與權限 (NTFS ACL)</td><td>D:\DataExchange 結構</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>inbound / pending / processing / archive / error</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>部門資料夾隔離 / 最小權限 / 讀寫分離</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>群組授權管理</td><td class="same">✓ 沿用</td></tr>
+
+          <tr><td rowspan="3">下載端</td><td>SFTP 給機器拉 (圖原本就有)</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>SMB 給 OA USER 用</td><td class="added">+ 增值 ①</td></tr>
+          <tr><td>Portal 批次 ZIP 給不會掛 SMB 的 USER</td><td class="added">+ 增值 ①</td></tr>
+
+          <tr><td>防火牆</td><td>必要 Port + IP 白名單 + 連線紀錄</td><td class="same">✓ 沿用</td></tr>
+
+          <tr><td rowspan="3">網路區域</td><td>DMZ (不做, 純內網)</td><td class="pending">N/A 純內網</td></tr>
+          <tr><td>與管理區隔離 (跳板機白名單)</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>與正式環境隔離 (PRD/OA 雙網段)</td><td class="same">✓ 沿用</td></tr>
+
+          <tr><td rowspan="5">PAM 系統</td><td>帳號集中納管</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>密碼保管 + 自動輪替</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>申請 / 核准流程</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>取用 / 代登入 (密碼揭露)</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>使用紀錄留存</td><td class="same">✓ 沿用</td></tr>
+
+          <tr><td rowspan="6">稽核紀錄</td><td>Windows Event Log</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>SFTP / FTP 操作 Log</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>登入 / 登出 / 檔案上下刪 / 權限異動</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>防火牆連線紀錄</td><td class="same">✓ 沿用 (11_setup_firewall_log.ps1)</td></tr>
+          <tr><td>Portal AuditLog DB (batch_id + chain_id + CEF 預留)</td><td class="added">+ 增值 ③</td></tr>
+          <tr><td>稽核查詢頁 + 事件鏈 + 系統 Log 集中</td><td class="added">+ 增值 ③</td></tr>
+
+          <tr><td>集中式 Log/SIEM</td><td>SIEM forwarder (階段二)</td><td class="pending">階段二</td></tr>
+
+          <tr><td rowspan="3">備份與保存</td><td>資料目錄備份 (Windows Server Backup)</td><td class="same">✓ 沿用 (15_setup_backup.ps1)</td></tr>
+          <tr><td>設定檔備份 (sshd/web.config/appsettings 等)</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>帳號權限備份 (本機+AD)</td><td class="same">✓ 沿用</td></tr>
+
+          <tr><td rowspan="3">監控與告警</td><td>主機效能監控 (CPU/Mem/Disk)</td><td class="same">✓ 沿用 (16_setup_monitoring.ps1)</td></tr>
+          <tr><td>容量使用監控 (FSRM 配額)</td><td class="same">✓ 沿用 (14_setup_quota_fsrm.ps1)</td></tr>
+          <tr><td>異常事件告警 (mail)</td><td class="same">✓ 沿用</td></tr>
+
+          <tr><td rowspan="4">安全防護</td><td>EDR / 防毒 (Defender 即時+排程)</td><td class="same">✓ 沿用 (13_setup_defender.ps1)</td></tr>
+          <tr><td>弱點掃描 (Nessus/MBSA/Defender)</td><td class="same">✓ 沿用 (17_vuln_scan_hint.md)</td></tr>
+          <tr><td>Windows Update</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>系統 Hardening (TLS/SMBv1/Cipher)</td><td class="same">✓ 沿用 (07_setup_gpo_policy.ps1)</td></tr>
+
+          <tr><td>NTP 時間同步</td><td>同步公司 NTP</td><td class="same">✓ 沿用 (10_setup_ntp.ps1)</td></tr>
+
+          <tr><td rowspan="2">其他整合</td><td>AD 整合 (Portal + SMB)</td><td class="same">✓ 沿用</td></tr>
+          <tr><td>SIEM (階段二) / 工單系統 (不在範圍)</td><td class="pending">階段二 / N/A</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <div class="version-info">
+    <div><span class="v-num">v2.0</span> · 架構圖 Z 方案完整版</div>
+    <div class="v-time">更新: 2026-05-18 23:15</div>
+  </div>
+
+</body>
+</html>

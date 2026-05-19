@@ -1,0 +1,42 @@
+﻿# SF Portal Python 套件清單
+# 用於 D:\_portal\app\.venv\
+# 部署: pip install --no-index --find-links ../python_wheels -r requirements.txt
+
+# Web framework
+flask>=3.0
+waitress>=3.0           # Windows-friendly WSGI server
+
+# DB
+pyodbc>=5.0             # SQL Server 連線
+
+# AD / LDAP
+ldap3>=2.9              # AD 群組查詢 / 維護
+
+# Auth & Session
+flask-login>=0.6
+flask-session>=0.5
+
+# Templates / Forms
+jinja2>=3.1
+flask-wtf>=1.2
+
+# Config
+python-dotenv>=1.0
+pyyaml>=6.0
+
+# Scheduling (批次聚合 / 簽核超時 / 7 天清理)
+apscheduler>=3.10
+
+# Mail
+flask-mail>=0.10
+
+# Utilities
+pywin32>=306            # Windows API
+psutil>=5.9             # 系統資源監控
+requests>=2.31
+
+# Excel (匯出稽核報表)
+openpyxl>=3.1
+
+# Crypto
+cryptography>=42

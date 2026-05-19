@@ -1,0 +1,58 @@
+﻿{
+    "fetched_by":  "ALIEN-FUJI\\leea6",
+    "total_bytes":  349519573,
+    "total_mb":  333.33,
+    "files":  [
+                  {
+                      "path":  "requirements.txt",
+                      "sha256":  "4B03F8A94E68C4EA016BAB7B09C915E70FF9270D2B86317026C9C46FB109C59D",
+                      "size_mb":  0,
+                      "size":  252
+                  },
+                  {
+                      "path":  "installers\\MsSqlCmdLnUtils.msi",
+                      "sha256":  "CB9924B0FE755F988202F770D2B06E06A65ACFD0CCB24E42D3575897DC484495",
+                      "size_mb":  0.97,
+                      "size":  1020441
+                  },
+                  {
+                      "path":  "installers\\python-3.11.9-amd64.exe",
+                      "sha256":  "5EE42C4EEE1E6B4464BB23722F90B45303F79442DF63083F05322F1785F5FDDE",
+                      "size_mb":  25,
+                      "size":  26216840
+                  },
+                  {
+                      "path":  "installers\\requestRouter_amd64.msi",
+                      "sha256":  "FB61FDB7101795A34D5129CB37EEE43AB675C7ED76BA3A3B23B039D8C90C2A4B",
+                      "size_mb":  2.38,
+                      "size":  2498560
+                  },
+                  {
+                      "path":  "installers\\rewrite_amd64_en-US.msi",
+                      "sha256":  "37342FF2F585F263F34F48E9DE59EB1051D61015A8E967DBDE4075716230A32A",
+                      "size_mb":  5.8,
+                      "size":  6078464
+                  },
+                  {
+                      "path":  "installers\\SQL2022-SSEI-Expr.exe",
+                      "sha256":  "36E0EC2AC3DD60F496C99CE44722C629209EA7302A2CE9CBFD1E42A73510D7B6",
+                      "size_mb":  4.09,
+                      "size":  4290992
+                  },
+                  {
+                      "path":  "installers\\SQLEXPR_x64_CHT.exe",
+                      "sha256":  "B3A1AE57C724D6DB41DF919AC25ACD6200EF4BD0C4DD3749611EC7B773EEE7CD",
+                      "size_mb":  270.63,
+                      "size":  283778256
+                  },
+                  {
+                      "path":  "installers\\vc_redist.x64.exe",
+                      "sha256":  "CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B",
+                      "size_mb":  24.45,
+                      "size":  25635768
+                  }
+              ],
+    "total_files":  8,
+    "fetched_at":  "2026-05-19T08:34:18.2310754+08:00",
+    "fetched_on":  "ALIEN-FUJI"
+}

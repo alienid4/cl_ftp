@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>SF 中繼檔案交換 Portal — 畫面模擬</title>
+<style>
+  /* ============ Reset & Base (大字體, 為老花最佳化) ============ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 18px; }
+  body {
+    font-family: "Noto Sans TC", "Microsoft JhengHei", -apple-system, sans-serif;
+    background: #f3f4f6;
+    color: #111827;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ============ Sidebar ============ */
+  .sidebar {
+    width: 280px;
+    background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%);
+    color: #fff;
+    padding: 28px 0;
+    flex-shrink: 0;
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar-head {
+    padding: 0 24px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 16px;
+  }
+  .sidebar-head h1 {
+    font-size: 20px;
+    line-height: 1.4;
+  }
+  .sidebar-head .sub {
+    color: #94a3b8;
+    font-size: 14px;
+    margin-top: 6px;
+  }
+  .nav-section {
+    padding: 8px 0;
+  }
+  .nav-section-title {
+    color: #64748b;
+    font-size: 12px;
+    padding: 8px 24px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .nav-item {
+    display: block;
+    padding: 14px 24px;
+    color: #cbd5e1;
+    text-decoration: none;
+    font-size: 17px;
+    border-left: 4px solid transparent;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .nav-item:hover {
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+  }
+  .nav-item.active {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    border-left-color: #3b82f6;
+    font-weight: 600;
+  }
+  .nav-item .icon { margin-right: 10px; }
+  .nav-item .badge {
+    float: right;
+    background: #ef4444;
+    color: #fff;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-top: 2px;
+  }
+
+  .user-info {
+    margin-top: 20px;
+    padding: 16px 24px;
+    background: rgba(0,0,0,0.2);
+    font-size: 14px;
+  }
+  .user-info .name { font-weight: 600; }
+  .user-info .role { color: #94a3b8; font-size: 13px; margin-top: 2px; }
+
+  /* ============ Main ============ */
+  .main {
+    flex: 1;
+    padding: 32px 40px;
+    overflow-x: auto;
+  }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-head {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  .page-head h2 {
+    font-size: 26px;
+    color: #0f172a;
+  }
+  .page-head .crumb {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  /* ============ Cards & Forms ============ */
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 18px;
+    color: #0f172a;
+    margin-bottom: 16px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 16px;
+  }
+  .form-row label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 16px;
+  }
+  .form-row input[type=text],
+  .form-row input[type=password],
+  .form-row select,
+  .form-row textarea {
+    font-size: 16px;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    width: 100%;
+    font-family: inherit;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  .form-row textarea { resize: vertical; min-height: 80px; }
+  .form-row .hint { color: #6b7280; font-size: 14px; margin-top: 4px; }
+
+  /* ============ Buttons ============ */
+  .btn {
+    display: inline-block;
+    padding: 10px 22px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+  .btn-primary  { background: #1e40af; color: #fff; }
+  .btn-primary:hover  { background: #1e3a8a; }
+  .btn-success  { background: #16a34a; color: #fff; }
+  .btn-success:hover  { background: #15803d; }
+  .btn-danger   { background: #dc2626; color: #fff; }
+  .btn-danger:hover   { background: #b91c1c; }
+  .btn-secondary{ background: #6b7280; color: #fff; }
+  .btn-secondary:hover{ background: #4b5563; }
+  .btn-outline  { background: #fff; color: #1e40af; border: 2px solid #1e40af; }
+  .btn-outline:hover { background: #1e40af; color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 14px; }
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-group .btn { margin: 0; }
+
+  /* ============ Tables ============ */
+  .table-wrap { overflow-x: auto; }
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  table.data th, table.data td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  table.data th {
+    background: #f9fafb;
+    color: #374151;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+  }
+  table.data tr:hover { background: #f9fafb; }
+  table.data .file-name { font-weight: 500; color: #1e40af; }
+  table.data .mono { font-family: Consolas, monospace; font-size: 14px; }
+  .right { text-align: right; }
+  .center { text-align: center; }
+  .nowrap { white-space: nowrap; }
+
+  /* ============ Status pills ============ */
+  .pill {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .pill-pending { background: #fef3c7; color: #92400e; }
+  .pill-approved{ background: #dcfce7; color: #14532d; }
+  .pill-rejected{ background: #fee2e2; color: #991b1b; }
+  .pill-expired { background: #e5e7eb; color: #374151; }
+  .pill-active  { background: #dbeafe; color: #1e3a8a; }
+  .pill-inactive{ background: #f3f4f6; color: #6b7280; }
+  .pill-info    { background: #e0f2fe; color: #075985; }
+
+  /* ============ Filter bar ============ */
+  .filter {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .filter input, .filter select {
+    font-size: 15px;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-family: inherit;
+  }
+
+  /* ============ Detail blocks ============ */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 14px 24px;
+    margin-bottom: 20px;
+  }
+  .detail-grid .k {
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .detail-grid .v {
+    color: #111827;
+    font-size: 16px;
+  }
+  .detail-grid .v.mono { font-family: Consolas, monospace; font-size: 14px; }
+
+  /* ============ Sign list ============ */
+  .signer-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .signer-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 14px;
+    background: #f9fafb;
+  }
+  .signer-card.done { background: #f0fdf4; border-color: #86efac; }
+  .signer-name { font-weight: 600; font-size: 16px; }
+  .signer-sub { color: #6b7280; font-size: 13px; margin-top: 2px; }
+  .signer-act { margin-top: 6px; font-size: 13px; }
+
+  /* ============ Timeline ============ */
+  .timeline {
+    position: relative;
+    padding-left: 32px;
+    margin-top: 16px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: #e5e7eb;
+  }
+  .tl-item {
+    position: relative;
+    padding-bottom: 18px;
+  }
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -28px;
+    top: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #3b82f6;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #3b82f6;
+  }
+  .tl-item.tl-pam::before    { background: #f59e0b; box-shadow: 0 0 0 2px #f59e0b; }
+  .tl-item.tl-ap::before     { background: #8b5cf6; box-shadow: 0 0 0 2px #8b5cf6; }
+  .tl-item.tl-sftp::before   { background: #10b981; box-shadow: 0 0 0 2px #10b981; }
+  .tl-item.tl-portal::before { background: #3b82f6; box-shadow: 0 0 0 2px #3b82f6; }
+  .tl-item.tl-smb::before    { background: #ef4444; box-shadow: 0 0 0 2px #ef4444; }
+  .tl-time {
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    color: #6b7280;
+  }
+  .tl-title {
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  .tl-meta {
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 2px;
+  }
+
+  /* ============ Login screen ============ */
+  .login-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+    padding: 20px;
+  }
+  .login-box {
+    background: #fff;
+    width: 100%;
+    max-width: 440px;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+  }
+  .login-box h1 {
+    font-size: 24px;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .login-box .sub {
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 28px;
+    font-size: 15px;
+  }
+  .login-box .ad-hint {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 12px 14px;
+    border-radius: 6px;
+    color: #1e40af;
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  .login-box .btn-primary { width: 100%; padding: 14px; font-size: 18px; }
+
+  /* ============ Info banner ============ */
+  .info-banner {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 14px 18px;
+    border-radius: 6px;
+    color: #1e3a8a;
+    margin-bottom: 16px;
+    font-size: 15px;
+  }
+  .warn-banner {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    padding: 14px 18px;
+    border-radius: 6px;
+    color: #78350f;
+    margin-bottom: 16px;
+    font-size: 15px;
+  }
+
+  /* ============ Stats cards ============ */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .stat {
+    background: #fff;
+    padding: 18px;
+    border-radius: 10px;
+    border-left: 4px solid #3b82f6;
+  }
+  .stat.warn { border-left-color: #f59e0b; }
+  .stat.ok   { border-left-color: #16a34a; }
+  .stat.bad  { border-left-color: #dc2626; }
+  .stat .num { font-size: 28px; font-weight: 700; color: #0f172a; }
+  .stat .lbl { font-size: 14px; color: #6b7280; margin-top: 4px; }
+
+  /* ============ Modal pseudo ============ */
+  .modal-hint {
+    background: #f9fafb;
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 16px;
+    color: #6b7280;
+    text-align: center;
+    font-size: 14px;
+    margin-top: 16px;
+  }
+
+  /* ============ Danger modal (path change confirmation) ============ */
+  .danger-modal {
+    background: #fef2f2;
+    border: 2px solid #ef4444;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-top: 16px;
+  }
+  .danger-modal .dm-head {
+    font-weight: 700;
+    color: #991b1b;
+    font-size: 18px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .steps-list {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0;
+    counter-reset: stepc;
+  }
+  .steps-list li {
+    counter-increment: stepc;
+    padding: 12px 14px 12px 52px;
+    position: relative;
+    background: #fff;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 15px;
+    border-left: 4px solid #ef4444;
+  }
+  .steps-list li::before {
+    content: counter(stepc);
+    position: absolute;
+    left: 14px;
+    top: 12px;
+    width: 28px;
+    height: 28px;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 50%;
+    text-align: center;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 28px;
+  }
+  .steps-list li code {
+    background: #fee2e2;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: Consolas, monospace;
+  }
+  .side-effects {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-top: 16px;
+    font-size: 15px;
+    color: #78350f;
+  }
+  .side-effects strong { color: #92400e; }
+  .current-path {
+    font-family: Consolas, monospace;
+    font-size: 18px;
+    background: #f3f4f6;
+    padding: 12px 16px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    color: #0f172a;
+  }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0;
+    font-size: 15px;
+  }
+  .check-row input[type=checkbox] {
+    width: 20px;
+    height: 20px;
+  }
+
+</style>
+</head>
+<body>
+
+  <!-- ========== Sidebar ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <h1>📁 SF 檔案交換 Portal</h1>
+      <div class="sub">中繼檔案交換主機 · 內網限定</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">使用者介面</div>
+      <a class="nav-item" data-page="login"><span class="icon">🔐</span>登入頁</a>
+      <a class="nav-item active" data-page="approval-list"><span class="icon">📝</span>我的待簽<span class="badge">3</span></a>
+      <a class="nav-item" data-page="approval-detail"><span class="icon">📄</span>簽核細節</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">業務負責人介面</div>
+      <a class="nav-item" data-page="my-groups"><span class="icon">📋</span>我的群組 (簽核名單)</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">管理員介面</div>
+      <a class="nav-item" data-page="biz-codes"><span class="icon">⚙️</span>業務代號管理</a>
+      <a class="nav-item" data-page="biz-new"><span class="icon">➕</span>新增業務代號</a>
+      <a class="nav-item" data-page="biz-edit"><span class="icon">✏️</span>編輯業務代號</a>
+      <a class="nav-item" data-page="audit-query"><span class="icon">🔍</span>稽核查詢</a>
+      <a class="nav-item" data-page="audit-chain"><span class="icon">🔗</span>事件鏈追蹤</a>
+    </div>
+
+    <div class="user-info">
+      <div class="name">👤 王主管</div>
+      <div class="role">AD: CORP\wang.manager<br>角色: 簽核人 (架構科)</div>
+    </div>
+  </aside>
+
+  <!-- ========== Main ========== -->
+  <main class="main">
+
+    <!-- ============== Page: Login ============== -->
+    <section class="page" id="page-login">
+      <div class="login-wrap" style="margin: -32px -40px;">
+        <div class="login-box">
+          <h1>📁 SF 檔案交換 Portal</h1>
+          <div class="sub">中繼檔案交換主機 (內網限定)</div>
+          <div class="ad-hint">
+            ℹ️ 本系統使用 <strong>Windows AD 整合驗證</strong>。請以您的 AD 帳號登入。
+          </div>
+          <div class="form-row">
+            <label>AD 帳號</label>
+            <input type="text" value="CORP\wang.manager" placeholder="網域\帳號">
+          </div>
+          <div class="form-row">
+            <label>密碼</label>
+            <input type="password" value="••••••••••••••">
+          </div>
+          <div style="margin-top: 24px;">
+            <button class="btn btn-primary">登入</button>
+          </div>
+          <div style="text-align:center; margin-top: 16px; color: #6b7280; font-size: 13px;">
+            登入失敗超過 5 次將自動鎖定 30 分鐘
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== Page: Approval List ============== -->
+    <section class="page active" id="page-approval-list">
+      <div class="page-head">
+        <div class="crumb">使用者介面</div>
+        <h2>📝 我的待簽列表</h2>
+      </div>
+
+      <div class="stats">
+        <div class="stat warn"><div class="num">3</div><div class="lbl">待我簽核</div></div>
+        <div class="stat ok"><div class="num">12</div><div class="lbl">本月已同意</div></div>
+        <div class="stat bad"><div class="num">2</div><div class="lbl">本月已駁回</div></div>
+        <div class="stat"><div class="num">8</div><div class="lbl">本月被他人先處理</div></div>
+      </div>
+
+      <div class="info-banner">
+        💡 <strong>ANY 制簽核</strong>: 同一業務代號有 5 位簽核人, <strong>任 1 位同意即放行 / 任 1 位駁回即駁回</strong>。請儘速處理以免別人先做。
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>待簽核項目</span>
+          <div class="btn-group">
+            <button class="btn btn-secondary btn-sm">🔄 重新整理</button>
+            <button class="btn btn-outline btn-sm">⚙️ 篩選</button>
+          </div>
+        </div>
+
+        <div class="filter">
+          <input type="text" placeholder="🔍 搜尋檔名 / 上傳人">
+          <select>
+            <option>全部業務代號</option>
+            <option>u01 - 架構科月結</option>
+            <option>u02 - 人資考勤</option>
+          </select>
+          <select>
+            <option>全部狀態</option>
+            <option>待我簽核</option>
+            <option>他人處理中</option>
+          </select>
+          <select>
+            <option>最近 7 天</option>
+            <option>最近 30 天</option>
+            <option>全部</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>業務代號</th>
+                <th>檔名</th>
+                <th>上傳人</th>
+                <th>來源</th>
+                <th>大小</th>
+                <th>上傳時間</th>
+                <th>剩餘簽核時間</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="pill pill-info">u01</span> 架構科月結</td>
+                <td class="file-name">202604_架構稽核報告.xlsx</td>
+                <td>張小明</td>
+                <td class="mono">AP-PRD-01<br>10.20.5.31</td>
+                <td>4.2 MB</td>
+                <td class="mono">05/17 14:32</td>
+                <td><span class="pill pill-pending">剩 6 天 23 時</span></td>
+                <td class="nowrap">
+                  <button class="btn btn-outline btn-sm" data-page="approval-detail">查看</button>
+                  <button class="btn btn-success btn-sm">同意</button>
+                  <button class="btn btn-danger btn-sm">駁回</button>
+                </td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-info">u03</span> 財務沖銷</td>
+                <td class="file-name">finance_reconcile_20260517.csv</td>
+                <td>李大華</td>
+                <td class="mono">AP-PRD-03<br>10.20.5.45</td>
+                <td>1.1 MB</td>
+                <td class="mono">05/17 11:08</td>
+                <td><span class="pill pill-pending">剩 6 天 20 時</span></td>
+                <td class="nowrap">
+                  <button class="btn btn-outline btn-sm">查看</button>
+                  <button class="btn btn-success btn-sm">同意</button>
+                  <button class="btn btn-danger btn-sm">駁回</button>
+                </td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-info">u01</span> 架構科月結</td>
+                <td class="file-name">network_topology_v3.pdf</td>
+                <td>陳專員</td>
+                <td class="mono">AP-PRD-01<br>10.20.5.31</td>
+                <td>12.6 MB</td>
+                <td class="mono">05/16 09:15</td>
+                <td><span class="pill pill-pending">剩 5 天 18 時</span></td>
+                <td class="nowrap">
+                  <button class="btn btn-outline btn-sm">查看</button>
+                  <button class="btn btn-success btn-sm">同意</button>
+                  <button class="btn btn-danger btn-sm">駁回</button>
+                </td>
+              </tr>
+              <tr style="opacity: 0.6;">
+                <td><span class="pill pill-info">u01</span> 架構科月結</td>
+                <td class="file-name">202604_資產清單.xlsx</td>
+                <td>張小明</td>
+                <td class="mono">AP-PRD-01<br>10.20.5.31</td>
+                <td>820 KB</td>
+                <td class="mono">05/15 16:42</td>
+                <td><span class="pill pill-approved">✓ 已由 林副理 同意</span></td>
+                <td class="nowrap"><button class="btn btn-secondary btn-sm">查看</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== Page: Approval Detail ============== -->
+    <section class="page" id="page-approval-detail">
+      <div class="page-head">
+        <div class="crumb">使用者介面 / 我的待簽 / 簽核細節</div>
+        <h2>📄 簽核細節 — 202604_架構稽核報告.xlsx</h2>
+      </div>
+
+      <div class="card">
+        <div class="card-title">基本資訊</div>
+        <div class="detail-grid">
+          <div class="k">業務代號</div><div class="v"><span class="pill pill-info">u01</span> 架構科月結報表</div>
+          <div class="k">檔名</div><div class="v">202604_架構稽核報告.xlsx</div>
+          <div class="k">SHA-256</div><div class="v mono">a3f5...b9e1 (完整: 64 字)</div>
+          <div class="k">大小</div><div class="v">4,243,712 bytes (4.2 MB)</div>
+          <div class="k">上傳人</div><div class="v">張小明 (PAM 申請 ID: <span class="mono">PAM_20260517_00123</span>)</div>
+          <div class="k">上傳來源</div><div class="v mono">AP-PRD-01 (10.20.5.31) · 透過 sftp u01@SF</div>
+          <div class="k">上傳時間</div><div class="v mono">2026-05-17 14:32:18 (今日 -2h)</div>
+          <div class="k">用途說明</div><div class="v">本月份架構稽核報告, 提供建檔組同仁進行月底審查作業。</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>簽核人狀態 (ANY 制 · AD 群組 <a class="mono" data-page="my-groups" style="color:#1e40af; cursor:pointer;">g_u01_approvers</a>)</span>
+          <span class="pill pill-pending">尚未有人處理</span>
+        </div>
+        <div class="info-banner" style="margin-bottom: 0;">
+          📋 <strong>簽核人名單由業務負責人在「我的群組」頁維護</strong>, IT 不介入。當下 AD 群組共 <strong>5 位</strong>成員。<br>
+          ⚠️ 任 <strong>1 位</strong>簽核人同意 → 立即放行至 OA samba <code>\\SF\architecture\</code> (7 天保留)<br>
+          任 <strong>1 位</strong>簽核人駁回 → 立即駁回, 7 天後自動刪除<br>
+          7 天無人處理 → 視同放棄, 需重新申請
+        </div>
+        <div class="signer-list">
+          <div class="signer-card">
+            <div class="signer-name">👤 王主管 (你)</div>
+            <div class="signer-sub">CORP\wang.manager · 架構科主管</div>
+            <div class="signer-act"><span class="pill pill-pending">尚未處理</span></div>
+          </div>
+          <div class="signer-card">
+            <div class="signer-name">👤 林副理</div>
+            <div class="signer-sub">CORP\lin.deputy · 副理</div>
+            <div class="signer-act"><span class="pill pill-pending">尚未處理</span></div>
+          </div>
+          <div class="signer-card">
+            <div class="signer-name">👤 黃組長</div>
+            <div class="signer-sub">CORP\huang.lead · 組長</div>
+            <div class="signer-act"><span class="pill pill-pending">尚未處理</span></div>
+          </div>
+          <div class="signer-card">
+            <div class="signer-name">👤 周稽核</div>
+            <div class="signer-sub">CORP\chou.audit · 稽核</div>
+            <div class="signer-act"><span class="pill pill-pending">尚未處理</span></div>
+          </div>
+          <div class="signer-card">
+            <div class="signer-name">👤 吳資安</div>
+            <div class="signer-sub">CORP\wu.security · 資安</div>
+            <div class="signer-act"><span class="pill pill-pending">尚未處理</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">我的決定</div>
+        <div class="form-row">
+          <label>簽核意見</label>
+          <textarea placeholder="(同意可空白, 駁回需填寫原因)"></textarea>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-success">✓ 同意放行</button>
+          <button class="btn btn-danger">✗ 駁回</button>
+          <button class="btn btn-secondary" data-page="approval-list">取消, 返回列表</button>
+        </div>
+      </div>
+
+      <div class="modal-hint">
+        💡 同意後檔案會立即搬到 <code>\\SF\architecture\</code>, 收件人 (架構科 AD 群組) 可從 OA 端用檔案總管下載
+      </div>
+    </section>
+
+    <!-- ============== Page: My Groups ============== -->
+    <section class="page" id="page-my-groups">
+      <div class="page-head">
+        <div class="crumb">業務負責人介面</div>
+        <h2>📋 我的群組 — 自行維護簽核人名單</h2>
+      </div>
+
+      <div class="info-banner">
+        💡 此頁讓您管理自己負責的業務代號對應 AD 群組成員 (= 簽核人名單)。<br>
+        新增 / 移除成員即時生效, 下次有檔案上傳時依當下名單通知。<br>
+        <strong>IT 不會幫您改, 請自行維護以免漏簽。</strong>
+      </div>
+
+      <div class="card">
+        <div class="card-title">我擁有的群組</div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>業務代號</th>
+                <th>AD 群組</th>
+                <th>當前成員數</th>
+                <th>最後變動</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background:#f0f9ff;">
+                <td><span class="pill pill-info">u01</span> 架構科月結</td>
+                <td class="mono">g_u01_approvers</td>
+                <td><strong>5 位</strong></td>
+                <td class="mono">2026-05-10 加入吳資安</td>
+                <td><button class="btn btn-primary btn-sm">目前管理中 ↓</button></td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-info">u03</span> 財務沖銷</td>
+                <td class="mono">g_u03_approvers</td>
+                <td>5 位</td>
+                <td class="mono">2026-04-22</td>
+                <td><button class="btn btn-outline btn-sm">管理成員</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>g_u01_approvers — 成員管理</span>
+          <span class="pill pill-info">u01 架構科月結</span>
+        </div>
+
+        <div class="signer-list">
+          <div class="signer-card done">
+            <div class="signer-name">👤 王主管</div>
+            <div class="signer-sub">CORP\wang.manager · 架構科主管</div>
+            <div class="signer-act" style="margin-top:8px;">
+              <span style="color:#6b7280; font-size:13px;">加入 2026-04-01</span>
+              <button class="btn btn-danger btn-sm" style="float:right;">移除</button>
+            </div>
+          </div>
+          <div class="signer-card done">
+            <div class="signer-name">👤 林副理</div>
+            <div class="signer-sub">CORP\lin.deputy · 副理</div>
+            <div class="signer-act" style="margin-top:8px;">
+              <span style="color:#6b7280; font-size:13px;">加入 2026-04-01</span>
+              <button class="btn btn-danger btn-sm" style="float:right;">移除</button>
+            </div>
+          </div>
+          <div class="signer-card done">
+            <div class="signer-name">👤 黃組長</div>
+            <div class="signer-sub">CORP\huang.lead · 組長</div>
+            <div class="signer-act" style="margin-top:8px;">
+              <span style="color:#6b7280; font-size:13px;">加入 2026-04-01</span>
+              <button class="btn btn-danger btn-sm" style="float:right;">移除</button>
+            </div>
+          </div>
+          <div class="signer-card done">
+            <div class="signer-name">👤 周稽核</div>
+            <div class="signer-sub">CORP\chou.audit · 稽核</div>
+            <div class="signer-act" style="margin-top:8px;">
+              <span style="color:#6b7280; font-size:13px;">加入 2026-04-15</span>
+              <button class="btn btn-danger btn-sm" style="float:right;">移除</button>
+            </div>
+          </div>
+          <div class="signer-card done">
+            <div class="signer-name">👤 吳資安</div>
+            <div class="signer-sub">CORP\wu.security · 資安</div>
+            <div class="signer-act" style="margin-top:8px;">
+              <span style="color:#6b7280; font-size:13px;">加入 2026-05-10</span>
+              <button class="btn btn-danger btn-sm" style="float:right;">移除</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px dashed #e5e7eb;">
+          <div class="card-title" style="margin-bottom: 12px;">➕ 新增成員</div>
+          <div class="form-row">
+            <label>AD 帳號</label>
+            <div>
+              <div style="display: flex; gap: 10px;">
+                <input type="text" placeholder="例: CORP\new.user 或從通訊錄搜尋姓名" style="flex: 1;">
+                <button class="btn btn-primary">查詢</button>
+                <button class="btn btn-success">加入群組</button>
+              </div>
+              <div class="hint">加入後該人下次有 u01 上傳會收到通知信, 不需通知 IT</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">變動歷史 (g_u01_approvers)</div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>時間</th>
+                <th>操作</th>
+                <th>對象</th>
+                <th>操作者</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">2026-05-10 14:22</td>
+                <td><span class="pill pill-active">加入</span></td>
+                <td>CORP\wu.security (吳資安)</td>
+                <td>CORP\zhang.ming (張小明)</td>
+              </tr>
+              <tr>
+                <td class="mono">2026-04-15 10:08</td>
+                <td><span class="pill pill-active">加入</span></td>
+                <td>CORP\chou.audit (周稽核)</td>
+                <td>CORP\zhang.ming (張小明)</td>
+              </tr>
+              <tr>
+                <td class="mono">2026-04-01 09:00</td>
+                <td><span class="pill pill-info">建立群組</span></td>
+                <td>g_u01_approvers + 初始 3 位成員 (王/林/黃)</td>
+                <td>CORP\it.admin (IT)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== Page: Biz Codes ============== -->
+    <section class="page" id="page-biz-codes">
+      <div class="page-head">
+        <div class="crumb">管理員介面</div>
+        <h2>⚙️ 業務代號管理</h2>
+      </div>
+
+      <div class="info-banner">
+        💡 業務代號 (u01, u02, ...) 是 SF 上的 Windows 本機帳號, 用於 SFTP 上傳。每個業務代號對應 <strong>5 位簽核人</strong>與 <strong>1 個 OA samba 部門目錄</strong>。新增後請通知 PAM 管理員納管帳號密碼。
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>業務代號清單</span>
+          <button class="btn btn-primary" data-page="biz-new">➕ 新增業務代號</button>
+        </div>
+
+        <div class="filter">
+          <input type="text" placeholder="🔍 搜尋代號 / 名稱">
+          <select>
+            <option>全部部門</option>
+            <option>架構科</option>
+            <option>人資處</option>
+          </select>
+          <select>
+            <option>全部狀態</option>
+            <option>啟用</option>
+            <option>停用</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>代號</th>
+                <th>業務名稱</th>
+                <th>負責人</th>
+                <th>簽核 AD 群組</th>
+                <th>對應 samba 目錄</th>
+                <th>保留期</th>
+                <th>狀態</th>
+                <th>建立</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono"><strong>u01</strong></td>
+                <td>架構科月結報表</td>
+                <td>張小明</td>
+                <td><a class="mono" data-page="my-groups" style="color:#1e40af; cursor:pointer;">g_u01_approvers</a> <span class="pill pill-info">5 位</span></td>
+                <td class="mono">\\SF\architecture\</td>
+                <td>7 天</td>
+                <td><span class="pill pill-active">啟用</span></td>
+                <td class="mono">2026-04-01</td>
+                <td class="nowrap">
+                  <button class="btn btn-outline btn-sm" data-page="biz-edit">編輯</button>
+                  <button class="btn btn-danger btn-sm">停用</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono"><strong>u02</strong></td>
+                <td>人資考勤資料</td>
+                <td>李大華</td>
+                <td><a class="mono" data-page="my-groups" style="color:#1e40af; cursor:pointer;">g_u02_approvers</a> <span class="pill pill-info">5 位</span></td>
+                <td class="mono">\\SF\hr\</td>
+                <td>7 天</td>
+                <td><span class="pill pill-active">啟用</span></td>
+                <td class="mono">2026-04-01</td>
+                <td class="nowrap">
+                  <button class="btn btn-outline btn-sm">編輯</button>
+                  <button class="btn btn-danger btn-sm">停用</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono"><strong>u03</strong></td>
+                <td>財務沖銷</td>
+                <td>陳專員</td>
+                <td><a class="mono" data-page="my-groups" style="color:#1e40af; cursor:pointer;">g_u03_approvers</a> <span class="pill pill-info">5 位</span></td>
+                <td class="mono">\\SF\finance\</td>
+                <td>7 天</td>
+                <td><span class="pill pill-active">啟用</span></td>
+                <td class="mono">2026-04-15</td>
+                <td class="nowrap">
+                  <button class="btn btn-outline btn-sm">編輯</button>
+                  <button class="btn btn-danger btn-sm">停用</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="mono"><strong>u04</strong></td>
+                <td>資安事件回報</td>
+                <td>吳資安</td>
+                <td><a class="mono" data-page="my-groups" style="color:#1e40af; cursor:pointer;">g_u04_approvers</a> <span class="pill pill-info">5 位</span></td>
+                <td class="mono">\\SF\security\</td>
+                <td>7 天</td>
+                <td><span class="pill pill-active">啟用</span></td>
+                <td class="mono">2026-04-20</td>
+                <td class="nowrap">
+                  <button class="btn btn-outline btn-sm">編輯</button>
+                  <button class="btn btn-danger btn-sm">停用</button>
+                </td>
+              </tr>
+              <tr style="opacity:0.5;">
+                <td class="mono"><strong>u05</strong></td>
+                <td>(舊) 法遵測試</td>
+                <td>—</td>
+                <td><span class="pill pill-inactive">群組已停用</span></td>
+                <td class="mono">—</td>
+                <td>—</td>
+                <td><span class="pill pill-inactive">已停用</span></td>
+                <td class="mono">2026-03-10</td>
+                <td class="nowrap">
+                  <button class="btn btn-secondary btn-sm">查看</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== Page: New Biz Code ============== -->
+    <section class="page" id="page-biz-new">
+      <div class="page-head">
+        <div class="crumb">管理員介面 / 業務代號管理 / 新增</div>
+        <h2>➕ 新增業務代號</h2>
+      </div>
+
+      <div class="card">
+        <div class="card-title">基本設定</div>
+        <div class="form-row">
+          <label>代號 *</label>
+          <div>
+            <input type="text" placeholder="例: u06" maxlength="10">
+            <div class="hint">系統會自動建立 SF 本機帳號 <code>u06</code>, 初始密碼隨機, 之後交由 PAM 接管</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>業務名稱 *</label>
+          <input type="text" placeholder="例: 法遵稽核報告">
+        </div>
+        <div class="form-row">
+          <label>負責人 (上傳)</label>
+          <input type="text" placeholder="自動帶入 AD 使用者">
+        </div>
+        <div class="form-row">
+          <label>用途說明</label>
+          <textarea placeholder="這個業務代號是給哪類資料用的"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">簽核人設定 (綁 AD 群組)</div>
+        <div class="warn-banner">
+          ⚠️ 簽核制為 <strong>ANY 制</strong>: 任 1 位同意即放行, 任 1 位駁回即駁回。<br>
+          ✨ 簽核人 = AD 群組成員。<strong>IT 不需維護個人名單</strong>, 由業務負責人在「我的群組」頁自行增刪。
+        </div>
+        <div class="form-row">
+          <label>AD 群組 *</label>
+          <div>
+            <input type="text" placeholder="例: g_u06_approvers">
+            <div class="hint">系統會自動建立 AD 群組, 並指派負責人為「群組擁有者」(可在「我的群組」頁管理成員)</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>初始成員</label>
+          <div>
+            <textarea placeholder="一行一個 AD 帳號, 例:&#10;CORP\wang.manager&#10;CORP\lin.deputy"></textarea>
+            <div class="hint">這只是初始名單, 之後業務負責人可自行增減, IT 不再介入</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">下載端 (OA samba) 設定</div>
+        <div class="form-row">
+          <label>samba 子目錄 *</label>
+          <input type="text" placeholder="例: legal_compliance">
+        </div>
+        <div class="form-row">
+          <label>OA 可下載 AD 群組</label>
+          <input type="text" placeholder="例: CORP\group_legal_view">
+        </div>
+        <div class="form-row">
+          <label>保留期</label>
+          <select>
+            <option>7 天 (預設)</option>
+            <option>14 天</option>
+            <option>30 天</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="btn-group">
+          <button class="btn btn-primary">建立業務代號</button>
+          <button class="btn btn-secondary" data-page="biz-codes">取消</button>
+        </div>
+      </div>
+
+      <div class="modal-hint">
+        💡 建立成功後系統會: (1) 在 SF 上建立 <code>u06</code> Windows 本機帳號 (2) 建立 samba 子目錄並套 ACL (3) 寫入業務代號設定 DB (4) 顯示「請通知 PAM 管理員納管 u06」訊息
+      </div>
+    </section>
+
+    <!-- ============== Page: Biz Edit (含 samba 路徑變更) ============== -->
+    <section class="page" id="page-biz-edit">
+      <div class="page-head">
+        <div class="crumb">管理員介面 / 業務代號管理 / 編輯</div>
+        <h2>✏️ 編輯業務代號 — <code>u01</code> 架構科月結報表</h2>
+      </div>
+
+      <div class="card">
+        <div class="card-title">基本資訊</div>
+        <div class="form-row">
+          <label>代號</label>
+          <div>
+            <input type="text" value="u01" disabled style="background:#f3f4f6; color:#6b7280;">
+            <div class="hint">代號為 SF 上的 Windows 本機帳號, <strong>建立後不可修改</strong></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>業務名稱 *</label>
+          <input type="text" value="架構科月結報表">
+        </div>
+        <div class="form-row">
+          <label>負責人</label>
+          <input type="text" value="CORP\zhang.ming (張小明)">
+        </div>
+        <div class="form-row">
+          <label>用途說明</label>
+          <textarea>本月份架構稽核報告及相關資產清單, 提供建檔組與稽核同仁進行月底審查作業</textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">簽核設定</div>
+        <div class="form-row">
+          <label>AD 群組</label>
+          <div>
+            <input type="text" value="g_u01_approvers" disabled style="background:#f3f4f6; color:#6b7280;">
+            <div class="hint">📋 群組名稱建立後不可改。<strong>成員增減請至「我的群組」頁</strong>, IT 不介入。</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>當前成員</label>
+          <div>
+            <div style="padding: 8px 0;">
+              <span class="pill pill-info" style="margin-right:6px;">5 位</span>
+              王主管, 林副理, 黃組長, 周稽核, 吳資安
+            </div>
+            <a class="btn btn-outline btn-sm" data-page="my-groups">→ 到「我的群組」頁管理</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>下載端 (OA samba) 設定</span>
+          <span class="pill pill-active">當前生效</span>
+        </div>
+
+        <div class="form-row">
+          <label>當前 samba 路徑</label>
+          <div class="current-path">\\SF\architecture\</div>
+        </div>
+        <div class="form-row">
+          <label>OA 可下載群組</label>
+          <input type="text" value="CORP\dept_archi_view">
+        </div>
+        <div class="form-row">
+          <label>保留期</label>
+          <select>
+            <option>7 天 (預設)</option>
+            <option>14 天</option>
+            <option>30 天</option>
+          </select>
+        </div>
+
+        <div class="warn-banner">
+          ⚠️ 變更 samba 路徑會動到 SF 上的實體目錄、SMB Share、NTFS ACL。<br>
+          請務必在離峰時段執行, 並通知 OA 端 USER 重掛新路徑。
+        </div>
+
+        <div style="margin-top:16px;">
+          <button class="btn btn-danger" onclick="document.getElementById('path-change-form').style.display='block'; this.style.display='none';">✏️ 變更 samba 路徑</button>
+        </div>
+
+        <!-- 變更路徑表單 + 確認對話框 (預設隱藏) -->
+        <div id="path-change-form" style="display:none; margin-top:20px; padding:20px; background:#fef2f2; border:2px dashed #ef4444; border-radius:10px;">
+
+          <div class="form-row">
+            <label>新 samba 路徑 *</label>
+            <input type="text" placeholder="例: arch_new (會建立 \\SF\arch_new\)" value="arch_new">
+          </div>
+
+          <div class="danger-modal">
+            <div class="dm-head">⚠️ 確認執行: 此操作會自動執行下列步驟</div>
+
+            <ol class="steps-list">
+              <li>在 SF 上建立新實體目錄 <code>D:\DataExchange\samba\arch_new\</code></li>
+              <li>套用 NTFS ACL: 給 <code>CORP\dept_archi_view</code> 讀取權, 給服務帳號 <code>svc_portal</code> 寫入權</li>
+              <li>建立 SMB Share: <code>New-SmbShare -Name "arch_new" -Path "D:\DataExchange\samba\arch_new"</code></li>
+              <li>啟用檔案存取稽核 (SACL) → 寫入 Windows Security Event Log</li>
+              <li>更新 Portal DB 中 <code>u01.target_samba = \\SF\arch_new\</code> (即時生效)</li>
+              <li>寫入 AuditLog: <code>SAMBA_PATH_CHANGED · old=architecture · new=arch_new · actor=admin</code></li>
+            </ol>
+
+            <div class="side-effects">
+              <strong>⚠ 副作用 (請務必了解):</strong>
+              <ul style="margin: 8px 0 0 20px; padding: 0;">
+                <li><strong>舊路徑 <code>\\SF\architecture\</code> 不會立即刪除</strong> — 已放在裡面的檔案還在 7 天倒數, 等 USER 取走</li>
+                <li>新上傳的 u01 檔案會自動進入新路徑 <code>\\SF\arch_new\</code></li>
+                <li>OA 端 USER 必須<strong>重新掛載 SMB</strong> 才能看到新路徑檔案 (建議下發通知信)</li>
+                <li>舊路徑檔案 7 天到期後自動清空 → 空殼目錄系統再自動刪</li>
+                <li>歷史 AuditLog 不會被改寫 (稽核要求), 過去的紀錄仍顯示 <code>\\SF\architecture\</code></li>
+              </ul>
+            </div>
+
+            <div class="check-row">
+              <input type="checkbox" id="chk-notify" checked>
+              <label for="chk-notify">✉ 變更完成後, 自動寄通知信給 <code>CORP\dept_archi_view</code> 群組所有成員 (告知新路徑與切換時程)</label>
+            </div>
+
+            <div class="check-row">
+              <input type="checkbox" id="chk-confirm">
+              <label for="chk-confirm"><strong>我已了解上述步驟與副作用, 確認執行</strong></label>
+            </div>
+
+            <div class="btn-group" style="margin-top:16px;">
+              <button class="btn btn-danger">🚨 執行路徑變更</button>
+              <button class="btn btn-secondary" onclick="document.getElementById('path-change-form').style.display='none'; this.parentElement.parentElement.querySelector('button.btn-danger').style.display='inline-block';">取消</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📜 路徑變更歷史</span>
+          <span class="pill pill-info">u01 自建立以來共 2 次變更</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>時間</th>
+                <th>舊路徑</th>
+                <th>新路徑</th>
+                <th>操作者</th>
+                <th>已通知 OA</th>
+                <th>備註</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">2026-05-02 09:15</td>
+                <td class="mono">\\SF\arch_old\</td>
+                <td class="mono"><strong>\\SF\architecture\</strong></td>
+                <td class="mono">CORP\it.admin</td>
+                <td><span class="pill pill-approved">✓ 已寄 23 人</span></td>
+                <td>命名標準化, 從縮寫改全名</td>
+              </tr>
+              <tr>
+                <td class="mono">2026-04-01 09:00</td>
+                <td>—</td>
+                <td class="mono"><strong>\\SF\arch_old\</strong></td>
+                <td class="mono">CORP\it.admin</td>
+                <td>—</td>
+                <td>業務代號 u01 初始建立</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="btn-group">
+          <button class="btn btn-primary">儲存基本資訊變更</button>
+          <button class="btn btn-secondary" data-page="biz-codes">返回業務代號清單</button>
+        </div>
+        <div class="modal-hint">
+          💡 此頁的「儲存基本資訊變更」只儲存 業務名稱 / 負責人 / 用途說明 / OA 群組 / 保留期。<br>
+          samba 路徑變更請走上方<strong>「✏️ 變更 samba 路徑」</strong>按鈕, 走獨立的二次確認流程。
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== Page: Audit Query ============== -->
+    <section class="page" id="page-audit-query">
+      <div class="page-head">
+        <div class="crumb">管理員介面</div>
+        <h2>🔍 稽核查詢</h2>
+      </div>
+
+      <div class="card">
+        <div class="card-title">查詢條件</div>
+        <div class="filter" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+          <input type="text" placeholder="操作者 AD 帳號">
+          <input type="text" placeholder="業務代號 (u01...)">
+          <input type="text" placeholder="檔名 (支援萬用字元)">
+          <input type="text" placeholder="來源 IP">
+          <select>
+            <option>全部事件類型</option>
+            <option>SFTP 上傳</option>
+            <option>Portal 簽核</option>
+            <option>SMB 下載</option>
+            <option>權限不足 (DENIED)</option>
+          </select>
+          <select>
+            <option>最近 24 小時</option>
+            <option>最近 7 天</option>
+            <option>最近 30 天</option>
+            <option>自訂區間</option>
+          </select>
+        </div>
+        <div class="btn-group" style="margin-top: 12px;">
+          <button class="btn btn-primary">🔍 查詢</button>
+          <button class="btn btn-secondary">重設</button>
+          <button class="btn btn-outline">📥 匯出 CSV</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>查詢結果 (共 47 筆)</span>
+          <span class="pill pill-info">執行時間 0.12s</span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>時間</th>
+                <th>來源</th>
+                <th>事件</th>
+                <th>操作者</th>
+                <th>業務</th>
+                <th>標的</th>
+                <th>來源 IP</th>
+                <th>結果</th>
+                <th>chain_id</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">05/17 14:32:18</td>
+                <td><span class="pill pill-info">SFTP</span></td>
+                <td>檔案上傳</td>
+                <td class="mono">u01 (張小明 via PAM)</td>
+                <td class="mono">u01</td>
+                <td>202604_架構稽核報告.xlsx</td>
+                <td class="mono">10.20.5.31</td>
+                <td><span class="pill pill-approved">SUCCESS</span></td>
+                <td class="mono">SF_SFTP_20260517_00045</td>
+              </tr>
+              <tr>
+                <td class="mono">05/17 14:45:02</td>
+                <td><span class="pill pill-info">PORTAL</span></td>
+                <td>簽核同意</td>
+                <td class="mono">CORP\lin.deputy</td>
+                <td class="mono">u01</td>
+                <td>202604_架構稽核報告.xlsx</td>
+                <td class="mono">10.30.1.88</td>
+                <td><span class="pill pill-approved">APPROVED</span></td>
+                <td class="mono">SF_PORTAL_20260517_00012</td>
+              </tr>
+              <tr>
+                <td class="mono">05/17 14:45:03</td>
+                <td><span class="pill pill-info">SYSTEM</span></td>
+                <td>檔案搬移</td>
+                <td>system</td>
+                <td class="mono">u01</td>
+                <td>home\u01 → samba\architecture</td>
+                <td class="mono">localhost</td>
+                <td><span class="pill pill-approved">SUCCESS</span></td>
+                <td class="mono">SF_PORTAL_20260517_00012</td>
+              </tr>
+              <tr>
+                <td class="mono">05/17 15:02:11</td>
+                <td><span class="pill pill-info">SMB</span></td>
+                <td>檔案下載</td>
+                <td class="mono">CORP\zhang.viewer</td>
+                <td>—</td>
+                <td>\\SF\architecture\202604_架構稽核報告.xlsx</td>
+                <td class="mono">10.30.2.45</td>
+                <td><span class="pill pill-approved">SUCCESS</span></td>
+                <td class="mono">SF_SMB_20260517_00078</td>
+              </tr>
+              <tr>
+                <td class="mono">05/17 15:18:30</td>
+                <td><span class="pill pill-info">SMB</span></td>
+                <td>嘗試存取被擋</td>
+                <td class="mono">CORP\liu.other</td>
+                <td>—</td>
+                <td>\\SF\finance\</td>
+                <td class="mono">10.30.2.88</td>
+                <td><span class="pill pill-rejected">DENIED</span></td>
+                <td class="mono">SF_SMB_20260517_00091</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== Page: Chain (timeline) ============== -->
+    <section class="page" id="page-audit-chain">
+      <div class="page-head">
+        <div class="crumb">管理員介面 / 稽核查詢 / 事件鏈追蹤</div>
+        <h2>🔗 事件鏈追蹤 — 202604_架構稽核報告.xlsx</h2>
+      </div>
+
+      <div class="warn-banner">
+        ⚠️ <strong>階段一</strong>: 顯示 SF 內部事件鏈 (SFTP → Portal → SMB)。<br>
+        <strong>階段二</strong> (預留): 接 PAM log 後, 可往前還原至「PAM 申請 → AP 主機登入」。
+      </div>
+
+      <div class="card">
+        <div class="card-title">事件時間軸</div>
+
+        <div class="timeline">
+
+          <div class="tl-item tl-pam">
+            <div class="tl-time">2026-05-17 14:25:03 [階段二]</div>
+            <div class="tl-title">PAM 申請 AP01 密碼 <span class="pill pill-info">PAM</span></div>
+            <div class="tl-meta">申請人: 張小明 (個人 AD: zhang.ming) · PAM 申請 ID: PAM_20260517_00123</div>
+          </div>
+
+          <div class="tl-item tl-ap">
+            <div class="tl-time">2026-05-17 14:26:11 [階段二]</div>
+            <div class="tl-title">AP01 登入 AP-PRD-01 <span class="pill pill-info">AP OS Log</span></div>
+            <div class="tl-meta">從 10.30.7.122 (張小明 OA 工作站) · RDP 連線</div>
+          </div>
+
+          <div class="tl-item tl-pam">
+            <div class="tl-time">2026-05-17 14:30:55 [階段二]</div>
+            <div class="tl-title">PAM 申請 u01 密碼 <span class="pill pill-info">PAM</span></div>
+            <div class="tl-meta">從 AP-PRD-01 (10.20.5.31) 申請 · PAM 申請 ID: PAM_20260517_00124</div>
+          </div>
+
+          <div class="tl-item tl-sftp">
+            <div class="tl-time">2026-05-17 14:32:18 ✓ <strong>已落地</strong></div>
+            <div class="tl-title">SFTP 上傳 <span class="pill pill-info">SF SFTP</span></div>
+            <div class="tl-meta">u01 @ 10.20.5.31 → /home/u01/202604_架構稽核報告.xlsx · 4.2MB · SHA-256: a3f5...b9e1</div>
+          </div>
+
+          <div class="tl-item tl-portal">
+            <div class="tl-time">2026-05-17 14:32:25 ✓</div>
+            <div class="tl-title">Portal 通知 5 位簽核人 <span class="pill pill-info">SF Portal</span></div>
+            <div class="tl-meta">王主管, 林副理, 黃組長, 周稽核, 吳資安 (mail + Portal 通知)</div>
+          </div>
+
+          <div class="tl-item tl-portal">
+            <div class="tl-time">2026-05-17 14:45:02 ✓</div>
+            <div class="tl-title">林副理同意 (ANY 制觸發) <span class="pill pill-approved">APPROVED</span></div>
+            <div class="tl-meta">CORP\lin.deputy 從 10.30.1.88 登入 Portal 點同意 · 意見: 「OK 放行」</div>
+          </div>
+
+          <div class="tl-item tl-portal">
+            <div class="tl-time">2026-05-17 14:45:03 ✓</div>
+            <div class="tl-title">系統自動搬檔 <span class="pill pill-info">SF System</span></div>
+            <div class="tl-meta">D:\DataExchange\home\u01\ → D:\DataExchange\samba\architecture\</div>
+          </div>
+
+          <div class="tl-item tl-smb">
+            <div class="tl-time">2026-05-17 15:02:11 ✓</div>
+            <div class="tl-title">USER 下載 <span class="pill pill-info">SF SMB</span></div>
+            <div class="tl-meta">CORP\zhang.viewer 從 10.30.2.45 透過 SMB 下載 \\SF\architecture\202604_架構稽核報告.xlsx</div>
+          </div>
+
+          <div class="tl-item tl-smb" style="opacity:0.5;">
+            <div class="tl-time">2026-05-24 14:45:03 (預定)</div>
+            <div class="tl-title">samba 自動清除 (7 天到期)</div>
+            <div class="tl-meta">排程工作將自動刪除檔案</div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">關聯資訊</div>
+        <div class="detail-grid">
+          <div class="k">事件鏈 ID</div><div class="v mono">CHAIN_20260517_00012 (將來串接用)</div>
+          <div class="k">同源 IP 統計</div><div class="v">10.20.5.31 (AP-PRD-01): 今日 12 次操作</div>
+          <div class="k">該檔案被下載</div><div class="v">1 次 (CORP\zhang.viewer)</div>
+          <div class="k">同業務本月</div><div class="v">u01 業務本月共 8 次, 全部通過</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+<script>
+  // 簡易 page switching
+  document.querySelectorAll('[data-page]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      const target = el.getAttribute('data-page');
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const targetPage = document.getElementById('page-' + target);
+      if (targetPage) targetPage.classList.add('active');
+      const targetNav = document.querySelector(`.nav-item[data-page="${target}"]`);
+      if (targetNav) targetNav.classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+</script>
+
+</body>
+</html>

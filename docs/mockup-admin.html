@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>SF Portal — 管理員介面</title>
+<link rel="stylesheet" href="static/css/cathay.css">
+<link rel="stylesheet" href="static/css/admin.css">
+<link rel="stylesheet" href="static/css/mockup-extra.css">
+</head>
+<body>
+
+  <!-- ===== Navbar ===== -->
+  <nav class="navbar">
+    <a class="navbar-brand">
+      <span class="dot" style="background:var(--orange);"></span> SF 檔案交換 Portal · 管理員
+    </a>
+    <ul class="nav-links">
+      <li><a data-page="dashboard" class="active">📊 Dashboard</a></li>
+      <li><a data-page="health">💚 系統健康</a></li>
+      <li><a data-page="system-log">📜 系統 Log</a></li>
+      <li><a data-page="biz-codes">⚙️ 業務管理</a></li>
+      <li><a data-page="accounts">👥 帳號</a></li>
+      <li><a data-page="audit-query">🔍 稽核</a></li>
+    </ul>
+    <div class="nav-user">
+      <div style="text-align:right;">
+        <div class="nu-name">🛡️ IT 管理員</div>
+        <div class="nu-dept">CORP\it.admin · 資訊處</div>
+      </div>
+      <span class="role-badge role-admin">SYSTEM ADMIN</span>
+    </div>
+  </nav>
+
+  <!-- 常駐警示帶 -->
+  <div class="admin-warning-bar">
+    🛡️ 您目前以「管理員」身分登入, 可看到全公司資料與系統狀態 — <strong>所有操作會被稽核</strong>
+  </div>
+
+  <div class="container">
+
+    <!-- ===== Dashboard ===== -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h1 style="font-size:22px; font-weight:700;">📊 管理員 Dashboard</h1>
+        <span class="text-muted-sm">最後登入: 2026-05-18 09:12</span>
+      </div>
+
+      <div class="card card-status-ok">
+        <div class="card-title">系統概要</div>
+        <div style="font-size:14px;">SF 檔案交換主機目前運作正常, 今日有 <strong>12 件上傳</strong>、<strong>3 件 DENIED</strong> 異常事件。</div>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="kpi-grid">
+        <div class="kpi-card ok"><div class="kpi-value ok">4</div><div class="kpi-label">啟用業務代號</div></div>
+        <div class="kpi-card warn"><div class="kpi-value warn">12</div><div class="kpi-label">今日上傳</div></div>
+        <div class="kpi-card"><div class="kpi-value">38</div><div class="kpi-label">本月簽核完成</div></div>
+        <div class="kpi-card"><div class="kpi-value">156</div><div class="kpi-label">本月 SMB 下載</div></div>
+        <div class="kpi-card error"><div class="kpi-value error">3</div><div class="kpi-label">今日 DENIED</div></div>
+        <div class="kpi-card warn"><div class="kpi-value warn">2</div><div class="kpi-label">超時未簽</div></div>
+      </div>
+
+      <!-- Health 速覽 -->
+      <div class="card">
+        <div class="card-title flex-between">
+          <span>💚 系統健康速覽</span>
+          <a class="btn btn-secondary btn-sm" data-page="health">完整健康頁 →</a>
+        </div>
+        <div class="health-grid">
+          <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">OpenSSH sshd</div><div class="hi-status">Running · uptime 18d 3h</div></div></div>
+          <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">IIS + Portal</div><div class="hi-status">Running · 響應 12ms</div></div></div>
+          <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">SMB Server</div><div class="hi-status">Running · 5 sessions</div></div></div>
+          <div class="health-item warn"><div class="hi-icon">⚠️</div><div><div class="hi-name">D: 磁碟</div><div class="hi-status">已用 72% · 剩 280 GB</div></div></div>
+          <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">SQL Express</div><div class="hi-status">AuditLog: 142,381 筆</div></div></div>
+          <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">排程工作</div><div class="hi-status">3/3 上次成功</div></div></div>
+        </div>
+      </div>
+
+      <!-- 異常事件 -->
+      <div class="card card-status-error">
+        <div class="card-title flex-between">
+          <span>📌 最近異常事件 (本日)</span>
+          <a class="btn btn-secondary btn-sm" data-page="audit-query">完整稽核查詢 →</a>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>時間</th><th>事件</th><th>業務</th><th>操作者</th><th>IP</th><th>結果</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="code-inline">15:18:30</span></td>
+                <td>SMB 嘗試存取被擋</td><td>—</td>
+                <td><span class="code-inline">CORP\liu.other</span></td>
+                <td><span class="code-inline">10.30.2.88</span></td>
+                <td><span class="badge badge-error">DENIED</span></td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">14:02:11</span></td>
+                <td>SFTP 認證失敗</td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>—</td>
+                <td><span class="code-inline">10.20.5.99</span></td>
+                <td><span class="badge badge-error">FAIL</span></td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">11:25:08</span></td>
+                <td>簽核超時自動駁回</td>
+                <td><span class="badge badge-a">u02</span></td>
+                <td>system</td>
+                <td>—</td>
+                <td><span class="badge badge-error">TIMEOUT</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== System Health ===== -->
+    <section class="page" id="page-health">
+      <div class="page-header">
+        <h1 style="font-size:22px; font-weight:700;">💚 系統健康</h1>
+      </div>
+
+      <div class="card">
+        <div class="card-title">核心服務狀態</div>
+        <div class="health-grid">
+          <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">OpenSSH sshd</div><div class="hi-status">PID 4128 · uptime 18d 3h 22m</div></div></div>
+          <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">IIS (W3SVC)</div><div class="hi-status">6 worker · 平均響應 12ms</div></div></div>
+          <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">Flask Portal</div><div class="hi-status">127.0.0.1:5000 · 8 連線</div></div></div>
+          <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">SMB Server</div><div class="hi-status">5 sessions · 18 open files</div></div></div>
+          <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">SQL Server Express</div><div class="hi-status">AuditLog: 142,381 筆</div></div></div>
+          <div class="health-item warn"><div class="hi-icon">⚠️</div><div><div class="hi-name">D: 磁碟使用率</div><div class="hi-status">720 GB / 1 TB (72%) · 預警 80%</div></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">排程工作狀態</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>工作</th><th>頻率</th><th>上次執行</th><th>結果</th><th>下次</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>7 天清理 (home + samba)</td>
+                <td>每日 02:00</td>
+                <td><span class="code-inline">05-18 02:00</span></td>
+                <td><span class="badge badge-ok">✓ 清 12 檔</span></td>
+                <td><span class="code-inline">05-19 02:00</span></td>
+                <td><button class="btn btn-secondary btn-sm">立即執行</button></td>
+              </tr>
+              <tr>
+                <td>簽核超時自動駁回</td>
+                <td>每小時</td>
+                <td><span class="code-inline">05-18 15:00</span></td>
+                <td><span class="badge badge-ok">✓ 駁 1 件</span></td>
+                <td><span class="code-inline">05-18 16:00</span></td>
+                <td><button class="btn btn-secondary btn-sm">立即執行</button></td>
+              </tr>
+              <tr>
+                <td>OpenSSH log 解析</td>
+                <td>每 5 分鐘</td>
+                <td><span class="code-inline">05-18 15:45</span></td>
+                <td><span class="badge badge-ok">✓ 23 筆</span></td>
+                <td><span class="code-inline">05-18 15:50</span></td>
+                <td><button class="btn btn-secondary btn-sm">立即執行</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== System Log ===== -->
+    <section class="page" id="page-system-log">
+      <div class="page-header">
+        <h1 style="font-size:22px; font-weight:700;">📜 系統 Log</h1>
+      </div>
+
+      <div class="card card-status-ok">
+        <div class="card-title">集中查看</div>
+        <div style="font-size:14px;">不用 RDP 上 SF, 即可初步診斷問題。完整 log 按「下載」。</div>
+      </div>
+
+      <div class="card">
+        <div class="tab-row">
+          <button class="tab-btn active">Portal (app.log)</button>
+          <button class="tab-btn">IIS Access</button>
+          <button class="tab-btn">OpenSSH</button>
+          <button class="tab-btn">SMB SACL</button>
+          <button class="tab-btn">SQL</button>
+          <button class="tab-btn">Scheduled</button>
+        </div>
+
+        <div class="log-viewer">2026-05-18 15:48:22 <span class="log-info">INFO</span>  [AUTH]   CORP\wang.manager 登入成功 from 10.30.1.88
+2026-05-18 15:48:25 <span class="log-info">INFO</span>  [VIEW]   /approval-list by CORP\wang.manager
+2026-05-18 15:49:01 <span class="log-info">INFO</span>  [SFTP→PORTAL] 偵測新檔 /home/u01/202604_架構稽核報告.xlsx (4.2MB)
+2026-05-18 15:49:02 <span class="log-info">INFO</span>  [MAIL]   寄信給 5 位簽核人 (g_u01_approvers)
+2026-05-18 15:49:02 <span class="log-info">INFO</span>  [MAIL]   SMTP success → mail-relay.corp:25
+2026-05-18 15:52:18 <span class="log-warn">WARN</span>  [AUTH]   登入失敗: CORP\unknown.user (第 2 次)
+2026-05-18 15:54:30 <span class="log-info">INFO</span>  [APPROVE] CORP\lin.deputy 同意 u01/202604_架構稽核報告.xlsx
+2026-05-18 15:54:31 <span class="log-info">INFO</span>  [MOVE]   D:\DataExchange\home\u01\xxx.xlsx → samba\architecture\
+2026-05-18 15:54:32 <span class="log-info">INFO</span>  [MAIL]   通知 dept_archi_view 群組 (23 位): 新檔可下載
+2026-05-18 15:58:15 <span class="log-error">ERROR</span> [PAM]    PAM webhook timeout (重試中)
+2026-05-18 15:58:45 <span class="log-info">INFO</span>  [PAM]    重試成功, chain_id 已串接
+2026-05-18 16:00:00 <span class="log-info">INFO</span>  [SCHED]  簽核超時掃描 開始
+2026-05-18 16:00:02 <span class="log-warn">WARN</span>  [SCHED]  u02/finance_test.csv 超過 7 天未簽, 自動駁回
+2026-05-18 16:00:03 <span class="log-info">INFO</span>  [SCHED]  簽核超時掃描 完成 (處理 1 件)</div>
+
+        <div style="display:flex; gap:10px; margin-top: 16px; flex-wrap: wrap;">
+          <button class="btn btn-secondary btn-sm">🔄 即時更新</button>
+          <button class="btn btn-secondary btn-sm">📥 下載完整 log</button>
+          <button class="btn btn-secondary btn-sm">🔍 關鍵字搜尋</button>
+          <button class="btn btn-fix">📦 收集 debug bundle</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Biz Codes Management ===== -->
+    <section class="page" id="page-biz-codes">
+      <div class="page-header">
+        <h1 style="font-size:22px; font-weight:700;">⚙️ 業務代號管理</h1>
+        <button class="btn btn-primary" data-page="biz-new">➕ 新增業務代號</button>
+      </div>
+
+      <div class="card card-status-ok">
+        <div class="card-title">說明</div>
+        <div style="font-size:14px;">業務代號 (u01, u02, ...) 是 SF 上的 Windows 本機帳號, 給 SFTP 上傳用。每個對應 1 個 AD 群組 (簽核人) 與 1 個 OA samba 目錄。新增後請通知 PAM 管理員納管。</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">業務代號清單 (5 筆)</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>代號</th><th>業務名稱</th><th>負責人</th><th>簽核 AD 群組</th><th>samba 目錄</th><th>狀態</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong><span class="code-inline">u01</span></strong></td>
+                <td>架構科月結報表</td>
+                <td>張小明</td>
+                <td><span class="code-inline">g_u01_approvers</span> <span class="badge badge-a">5 位</span></td>
+                <td><span class="code-inline">\\SF\architecture\</span></td>
+                <td><span class="badge badge-ok">啟用</span></td>
+                <td style="white-space:nowrap;">
+                  <button class="btn btn-secondary btn-sm" data-page="biz-edit">編輯</button>
+                  <button class="btn btn-danger btn-sm">停用</button>
+                </td>
+              </tr>
+              <tr>
+                <td><strong><span class="code-inline">u02</span></strong></td>
+                <td>人資考勤資料</td>
+                <td>李大華</td>
+                <td><span class="code-inline">g_u02_approvers</span> <span class="badge badge-a">5 位</span></td>
+                <td><span class="code-inline">\\SF\hr\</span></td>
+                <td><span class="badge badge-ok">啟用</span></td>
+                <td style="white-space:nowrap;">
+                  <button class="btn btn-secondary btn-sm">編輯</button>
+                  <button class="btn btn-danger btn-sm">停用</button>
+                </td>
+              </tr>
+              <tr>
+                <td><strong><span class="code-inline">u03</span></strong></td>
+                <td>財務沖銷</td>
+                <td>陳專員</td>
+                <td><span class="code-inline">g_u03_approvers</span> <span class="badge badge-a">5 位</span></td>
+                <td><span class="code-inline">\\SF\finance\</span></td>
+                <td><span class="badge badge-ok">啟用</span></td>
+                <td style="white-space:nowrap;">
+                  <button class="btn btn-secondary btn-sm">編輯</button>
+                  <button class="btn btn-danger btn-sm">停用</button>
+                </td>
+              </tr>
+              <tr>
+                <td><strong><span class="code-inline">u04</span></strong></td>
+                <td>資安事件回報</td>
+                <td>吳資安</td>
+                <td><span class="code-inline">g_u04_approvers</span> <span class="badge badge-a">5 位</span></td>
+                <td><span class="code-inline">\\SF\security\</span></td>
+                <td><span class="badge badge-ok">啟用</span></td>
+                <td style="white-space:nowrap;">
+                  <button class="btn btn-secondary btn-sm">編輯</button>
+                  <button class="btn btn-danger btn-sm">停用</button>
+                </td>
+              </tr>
+              <tr style="opacity:0.5;">
+                <td><strong><span class="code-inline">u05</span></strong></td>
+                <td>(舊) 法遵測試</td>
+                <td>—</td>
+                <td>已停用</td>
+                <td>—</td>
+                <td><span class="badge badge-error">已停用</span></td>
+                <td style="white-space:nowrap;"><button class="btn btn-secondary btn-sm">查看</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== New Biz Code ===== -->
+    <section class="page" id="page-biz-new">
+      <div class="page-header">
+        <a class="back-link" data-page="biz-codes">← 返回業務代號清單</a>
+      </div>
+      <h1 style="font-size:20px; font-weight:700; margin-bottom:20px;">➕ 新增業務代號</h1>
+
+      <div class="card">
+        <div class="card-title">基本設定</div>
+        <div class="form-grid">
+          <div class="form-group"><label>代號 *</label><input type="text" placeholder="例: u06"></div>
+          <div class="form-group"><label>業務名稱 *</label><input type="text" placeholder="例: 法遵稽核報告"></div>
+          <div class="form-group"><label>負責人</label><input type="text" placeholder="自動帶入 AD 使用者"></div>
+          <div class="form-group">
+            <label>保留期</label>
+            <select><option>7 天</option><option>14 天</option><option>30 天</option></select>
+          </div>
+        </div>
+        <div class="form-group"><label>用途說明</label><textarea rows="2"></textarea></div>
+      </div>
+
+      <div class="card card-status-warn">
+        <div class="card-title">簽核設定 (綁 AD 群組)</div>
+        <div style="font-size:13px; margin-bottom: 12px;">
+          ⚠️ <strong>ANY 制</strong>: 任 1 同意即放行, 任 1 駁回即駁回。<br>
+          ✨ IT 不需維護個人名單, 由業務負責人在「我的群組」頁自行增刪。
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>AD 群組 *</label><input type="text" placeholder="例: g_u06_approvers"></div>
+          <div class="form-group"><label>OA 可下載群組</label><input type="text" placeholder="例: CORP\group_legal_view"></div>
+        </div>
+        <div class="form-group"><label>初始成員 (一行一個 AD 帳號)</label><textarea rows="3"></textarea></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">下載端 (OA samba)</div>
+        <div class="form-group"><label>samba 子目錄 *</label><input type="text" placeholder="例: legal_compliance"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-primary">建立業務代號</button>
+          <button class="btn btn-secondary" data-page="biz-codes">取消</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Edit Biz Code (含 samba 路徑變更) ===== -->
+    <section class="page" id="page-biz-edit">
+      <div class="page-header">
+        <a class="back-link" data-page="biz-codes">← 返回業務代號清單</a>
+      </div>
+      <h1 style="font-size:20px; font-weight:700; margin-bottom:20px;">✏️ 編輯業務代號 — u01 架構科月結報表</h1>
+
+      <div class="card">
+        <div class="card-title">基本資訊</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>代號</label>
+            <input type="text" value="u01" disabled style="background:var(--bg2);">
+          </div>
+          <div class="form-group">
+            <label>AD 群組</label>
+            <input type="text" value="g_u01_approvers" disabled style="background:var(--bg2);">
+          </div>
+          <div class="form-group"><label>業務名稱</label><input type="text" value="架構科月結報表"></div>
+          <div class="form-group"><label>負責人</label><input type="text" value="CORP\zhang.ming"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title flex-between">
+          <span>下載端 samba 設定</span>
+          <span class="badge badge-ok">當前生效</span>
+        </div>
+
+        <div class="form-group">
+          <label>當前 samba 路徑</label>
+          <div class="current-path">\\SF\architecture\</div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group"><label>OA 可下載群組</label><input type="text" value="CORP\dept_archi_view"></div>
+          <div class="form-group">
+            <label>保留期</label>
+            <select><option>7 天 (預設)</option><option>14 天</option></select>
+          </div>
+        </div>
+
+        <div style="background:#FFF8E1; border-left:4px solid var(--orange); padding:12px 16px; border-radius:6px; margin-top:16px; font-size:13px; color:#B8660B;">
+          ⚠️ 變更 samba 路徑會動到 SF 上的實體目錄、SMB Share、NTFS ACL。請務必在離峰時段執行, 並通知 OA 端 USER 重掛新路徑。
+        </div>
+
+        <div style="margin-top:16px;">
+          <button class="btn btn-danger" onclick="document.getElementById('path-change-form').style.display='block'; this.style.display='none';">✏️ 變更 samba 路徑</button>
+        </div>
+
+        <!-- 變更路徑表單 + 確認對話框 -->
+        <div id="path-change-form" style="display:none; margin-top:20px;">
+          <div class="form-group">
+            <label>新 samba 路徑 *</label>
+            <input type="text" placeholder="例: arch_new (會建立 \\SF\arch_new\)" value="arch_new">
+          </div>
+
+          <div class="danger-box">
+            <h3>⚠️ 確認執行: 此操作會自動執行下列步驟</h3>
+
+            <ol class="step-list">
+              <li>在 SF 上建立新實體目錄 <code class="code-inline">D:\DataExchange\samba\arch_new\</code></li>
+              <li>套用 NTFS ACL: 給 <code class="code-inline">CORP\dept_archi_view</code> 讀取權, 給 <code class="code-inline">svc_portal</code> 寫入權</li>
+              <li>建立 SMB Share: <code class="code-inline">New-SmbShare -Name "arch_new"</code></li>
+              <li>啟用檔案存取稽核 (SACL) → Windows Security Event Log</li>
+              <li>更新 Portal DB: <code class="code-inline">u01.target_samba = \\SF\arch_new\</code></li>
+              <li>寫入 AuditLog: <code class="code-inline">SAMBA_PATH_CHANGED</code></li>
+            </ol>
+
+            <div class="side-effects">
+              <strong>⚠ 副作用:</strong>
+              <ul>
+                <li><strong>舊路徑 \\SF\architecture\ 不會立即刪除</strong> — 已放在裡面的檔案還在 7 天倒數</li>
+                <li>新上傳的 u01 檔案會自動進入新路徑</li>
+                <li>OA 端 USER 必須<strong>重新掛載 SMB</strong> 才能看到新路徑</li>
+                <li>舊路徑檔案 7 天到期後自動清空, 空殼系統再自動刪</li>
+                <li>歷史 AuditLog 不會被改寫 (稽核要求)</li>
+              </ul>
+            </div>
+
+            <div class="check-row">
+              <input type="checkbox" id="chk-notify" checked>
+              <label for="chk-notify">✉ 變更完成後, 自動寄通知信給 <code class="code-inline">CORP\dept_archi_view</code> 群組所有成員</label>
+            </div>
+
+            <div class="check-row">
+              <input type="checkbox" id="chk-confirm">
+              <label for="chk-confirm"><strong>我已了解上述步驟與副作用, 確認執行</strong></label>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:16px;">
+              <button class="btn btn-danger">🚨 執行路徑變更</button>
+              <button class="btn btn-secondary" onclick="document.getElementById('path-change-form').style.display='none';">取消</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title flex-between">
+          <span>📜 路徑變更歷史</span>
+          <span class="badge badge-a">u01 自建立以來共 2 次變更</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>時間</th><th>舊路徑</th><th>新路徑</th><th>操作者</th><th>已通知</th><th>備註</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="code-inline">2026-05-02 09:15</span></td>
+                <td><span class="code-inline">\\SF\arch_old\</span></td>
+                <td><span class="code-inline">\\SF\architecture\</span></td>
+                <td><span class="code-inline">CORP\it.admin</span></td>
+                <td><span class="badge badge-ok">✓ 23 人</span></td>
+                <td>命名標準化</td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">2026-04-01 09:00</span></td>
+                <td>—</td>
+                <td><span class="code-inline">\\SF\arch_old\</span></td>
+                <td><span class="code-inline">CORP\it.admin</span></td>
+                <td>—</td>
+                <td>業務代號 u01 初始建立</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-primary">儲存基本資訊變更</button>
+          <button class="btn btn-secondary" data-page="biz-codes">返回</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Account Management ===== -->
+    <section class="page" id="page-accounts">
+      <div class="page-header">
+        <h1 style="font-size:22px; font-weight:700;">👥 帳號管理</h1>
+        <button class="btn btn-primary">➕ 新增帳號</button>
+      </div>
+
+      <div class="card card-status-ok">
+        <div class="card-title">說明</div>
+        <div style="font-size:14px;">
+          SF 上的帳號分兩類: (1) <strong>業務代號帳號</strong> u01~u04 (本機, 給 SFTP 用, 密碼 PAM 管) (2) <strong>服務帳號</strong> svc_portal / svc_pam (本機, Portal 與 PAM 用)。一般使用者用 AD 帳號, 不在此頁管理。
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">SF 本機帳號清單</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>帳號</th><th>類型</th><th>用途</th><th>密碼管理</th><th>狀態</th><th>最後活動</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong><span class="code-inline">u01</span></strong></td>
+                <td><span class="badge badge-a">業務代號</span></td>
+                <td>SFTP 上傳 - 架構科月結</td>
+                <td>PAM 納管</td>
+                <td><span class="badge badge-ok">啟用</span></td>
+                <td><span class="code-inline">2026-05-18 14:32</span></td>
+                <td style="white-space:nowrap;">
+                  <button class="btn btn-secondary btn-sm">查看</button>
+                  <button class="btn btn-fix btn-sm">通知 PAM 重新納管</button>
+                </td>
+              </tr>
+              <tr>
+                <td><strong><span class="code-inline">u02</span></strong></td>
+                <td><span class="badge badge-a">業務代號</span></td>
+                <td>SFTP 上傳 - 人資考勤</td>
+                <td>PAM 納管</td>
+                <td><span class="badge badge-ok">啟用</span></td>
+                <td><span class="code-inline">2026-05-17 09:15</span></td>
+                <td><button class="btn btn-secondary btn-sm">查看</button></td>
+              </tr>
+              <tr>
+                <td><strong><span class="code-inline">u03</span></strong></td>
+                <td><span class="badge badge-a">業務代號</span></td>
+                <td>SFTP 上傳 - 財務沖銷</td>
+                <td>PAM 納管</td>
+                <td><span class="badge badge-ok">啟用</span></td>
+                <td><span class="code-inline">2026-05-17 11:08</span></td>
+                <td><button class="btn btn-secondary btn-sm">查看</button></td>
+              </tr>
+              <tr>
+                <td><strong><span class="code-inline">u04</span></strong></td>
+                <td><span class="badge badge-a">業務代號</span></td>
+                <td>SFTP 上傳 - 資安事件</td>
+                <td>PAM 納管</td>
+                <td><span class="badge badge-ok">啟用</span></td>
+                <td><span class="code-inline">2026-05-15 16:40</span></td>
+                <td><button class="btn btn-secondary btn-sm">查看</button></td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">svc_portal</span></td>
+                <td><span class="badge badge-c">服務帳號</span></td>
+                <td>Flask Portal 執行身分</td>
+                <td>本機 (僅 IT 知道)</td>
+                <td><span class="badge badge-ok">啟用</span></td>
+                <td>持續</td>
+                <td><button class="btn btn-secondary btn-sm">查看</button></td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">svc_pam</span></td>
+                <td><span class="badge badge-c">服務帳號</span></td>
+                <td>PAM 系統用來改 u0X 密碼</td>
+                <td>PAM 自管</td>
+                <td><span class="badge badge-ok">啟用</span></td>
+                <td>每日 (rotate)</td>
+                <td><button class="btn btn-secondary btn-sm">查看</button></td>
+              </tr>
+              <tr style="opacity:0.5;">
+                <td><span class="code-inline">u05</span></td>
+                <td><span class="badge badge-a">業務代號</span></td>
+                <td>(舊) 法遵測試</td>
+                <td>—</td>
+                <td><span class="badge badge-error">停用</span></td>
+                <td><span class="code-inline">2026-03-15</span></td>
+                <td><button class="btn btn-secondary btn-sm">查看</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Portal 登入過的 AD 使用者</div>
+        <div class="filter-bar">
+          <input type="text" class="input-field" placeholder="🔍 搜尋 AD 帳號">
+          <select class="input-field"><option>全部部門</option><option>架構科</option><option>HR</option></select>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>AD 帳號</th><th>顯示名</th><th>部門</th><th>角色</th><th>最後登入</th><th>本月活動</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="code-inline">CORP\wang.manager</span></td>
+                <td>王主管</td>
+                <td>架構科</td>
+                <td>簽核人 + u01 負責人</td>
+                <td><span class="code-inline">2026-05-18 09:12</span></td>
+                <td>15 次</td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">CORP\lin.deputy</span></td>
+                <td>林副理</td>
+                <td>架構科</td>
+                <td>簽核人</td>
+                <td><span class="code-inline">2026-05-17 14:45</span></td>
+                <td>8 次</td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">CORP\it.admin</span> (你)</td>
+                <td>IT 管理員</td>
+                <td>資訊處</td>
+                <td><span class="role-badge role-admin">SYSTEM ADMIN</span></td>
+                <td><span class="code-inline">2026-05-18 09:12</span></td>
+                <td>42 次</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Audit Query (全公司) ===== -->
+    <section class="page" id="page-audit-query">
+      <div class="page-header">
+        <h1 style="font-size:22px; font-weight:700;">🔍 全公司稽核查詢</h1>
+      </div>
+
+      <div class="card card-status-warn">
+        <div class="card-title">使用提醒</div>
+        <div style="font-size:14px;">您正在查詢全公司所有業務代號的事件紀錄。一般使用者只能查到自己有關的事件, 您可以看到全部 — <strong>請謹慎使用</strong>, 查詢動作會被記錄。</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">查詢條件</div>
+        <div class="filter-grid">
+          <input type="text" class="input-field" placeholder="操作者 AD 帳號">
+          <input type="text" class="input-field" placeholder="業務代號 u01...u04">
+          <input type="text" class="input-field" placeholder="檔名 (萬用字元 *)">
+          <input type="text" class="input-field" placeholder="來源 IP">
+          <select class="input-field"><option>全部事件類型</option><option>SFTP 上傳</option><option>簽核</option><option>SMB 下載</option><option>DENIED</option></select>
+          <select class="input-field"><option>最近 24 小時</option><option>最近 7 天</option><option>最近 30 天</option></select>
+        </div>
+        <div style="display:flex; gap:10px; margin-top: 12px; flex-wrap: wrap;">
+          <button class="btn btn-primary">🔍 查詢</button>
+          <button class="btn btn-secondary">重設</button>
+          <button class="btn btn-secondary">📥 匯出 CSV</button>
+          <button class="btn btn-fix">⚡ 給 GPT 分析 (去識別化)</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title flex-between">
+          <span>結果 (共 142,381 筆, 顯示前 5)</span>
+          <span class="text-muted-sm">執行 0.18s</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>時間</th><th>來源</th><th>事件</th><th>操作者</th><th>業務</th><th>標的</th><th>IP</th><th>結果</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="code-inline">05/17 14:32:18</span></td>
+                <td><span class="badge badge-a">SFTP</span></td>
+                <td>檔案上傳</td>
+                <td><span class="code-inline">u01 (張小明 via PAM)</span></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>202604_架構稽核報告.xlsx</td>
+                <td><span class="code-inline">10.20.5.31</span></td>
+                <td><span class="badge badge-ok">SUCCESS</span></td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">05/17 14:45:02</span></td>
+                <td><span class="badge badge-a">PORTAL</span></td>
+                <td>簽核同意</td>
+                <td><span class="code-inline">CORP\lin.deputy</span></td>
+                <td><span class="badge badge-a">u01</span></td>
+                <td>202604_架構稽核報告.xlsx</td>
+                <td><span class="code-inline">10.30.1.88</span></td>
+                <td><span class="badge badge-ok">APPROVED</span></td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">05/17 15:02:11</span></td>
+                <td><span class="badge badge-a">SMB</span></td>
+                <td>檔案下載</td>
+                <td><span class="code-inline">CORP\zhang.viewer</span></td>
+                <td>—</td>
+                <td>\\SF\architecture\...</td>
+                <td><span class="code-inline">10.30.2.45</span></td>
+                <td><span class="badge badge-ok">SUCCESS</span></td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">05/17 15:18:30</span></td>
+                <td><span class="badge badge-a">SMB</span></td>
+                <td>嘗試存取被擋</td>
+                <td><span class="code-inline">CORP\liu.other</span></td>
+                <td>—</td>
+                <td>\\SF\finance\</td>
+                <td><span class="code-inline">10.30.2.88</span></td>
+                <td><span class="badge badge-error">DENIED</span></td>
+              </tr>
+              <tr>
+                <td><span class="code-inline">05/17 15:18:30</span></td>
+                <td><span class="badge badge-c">ADMIN</span></td>
+                <td>稽核查詢</td>
+                <td><span class="code-inline">CORP\it.admin</span></td>
+                <td>—</td>
+                <td>條件: business=u03</td>
+                <td><span class="code-inline">10.40.0.5</span></td>
+                <td><span class="badge badge-ok">SUCCESS</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 右下角版本資訊 (管理員版橘色帶) -->
+  <div class="version-info admin">
+    <div><span class="v-num">v1.0.0</span> · 🛡️ 管理員介面</div>
+    <div class="v-time">更新: <span id="build-time"></span></div>
+  </div>
+
+<script>
+  document.getElementById('build-time').textContent = '2026-05-18 22:55';
+
+  document.querySelectorAll('[data-page]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      const target = el.getAttribute('data-page');
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-links a').forEach(n => n.classList.remove('active'));
+      const targetPage = document.getElementById('page-' + target);
+      if (targetPage) targetPage.classList.add('active');
+      const targetNav = document.querySelector(`.nav-links a[data-page="${target}"]`);
+      if (targetNav) targetNav.classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+
+  // Log tab 切換
+  document.querySelectorAll('.tab-btn').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

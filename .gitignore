@@ -1,0 +1,109 @@
+# ============================================
+# SF 中繼檔案交換主機 — .gitignore
+# 確保 binary / 大檔 / 敏感資訊不會推上 git
+# ============================================
+
+# ===== 離線 bundle binary (絕對不能進 git) =====
+# 整個 bundle 輸出目錄
+deploy/offline/bundle_output/
+deploy/offline/installers/
+deploy/offline/python_wheels/
+*.bundle.zip
+sf_offline_bundle_*.zip
+
+# 個別下載檔 (避免誤 add)
+*.msi
+*.exe
+*.whl
+*.iso
+
+# 例外: 允許小型 .exe / .msi (例如自己寫的小工具, 但這專案沒有)
+# 若有例外, 用 !pattern 顯式加回
+
+# ===== SSL 憑證 / 敏感資訊 =====
+*.pfx
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+appsettings.json
+appsettings.*.json
+.env
+.env.local
+.env.production
+*.local.json
+
+# 例外: 範本檔可以進 git
+!appsettings.example.json
+!.env.example
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 虛擬環境
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ===== IDE / 編輯器 =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ===== Log 檔 (執行階段才會有, 但寫進來防呆) =====
+*.log
+logs/
+log/
+*.log.*
+
+# ===== Backup / 暫存 =====
+*.bak
+*.backup
+*.tmp
+*.old
+*.orig
+*~
+
+# ===== Windows =====
+*.lnk
+desktop.ini
+
+# ===== 大型輸出 =====
+debug_bundle_*.zip
+sf_offline_*.zip
+backups/
+*.sql.bak
+
+# ===== Mock / 測試資料 =====
+test_data/
+mock_uploads/
+sample_files/

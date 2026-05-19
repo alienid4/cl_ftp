@@ -1,0 +1,100 @@
+# =====================================================================
+# OpenSSH Server Config for SF (檔案交換主機)
+# 對齊主管圖 + Z 方案要求
+#
+# 套用位置: C:\ProgramData\ssh\sshd_config
+# 由 03_install_openssh.ps1 自動部署
+# 修改後重啟服務: Restart-Service sshd
+# =====================================================================
+
+# ===== 監聽 =====
+Port 22
+# 限制只在內網介面 (預設 0.0.0.0 任何介面, 由防火牆限制)
+# ListenAddress 10.0.0.10
+
+# ===== 協定版本 (僅 SSH-2) =====
+Protocol 2
+
+# ===== 主機金鑰 =====
+HostKey C:/ProgramData/ssh/ssh_host_ed25519_key
+HostKey C:/ProgramData/ssh/ssh_host_rsa_key
+# 停用較舊的 ECDSA / DSA (註解掉即可)
+
+# ===== 認證 =====
+# 業務代號帳號用密碼 (由 PAM 揭露)
+PasswordAuthentication yes
+PermitEmptyPasswords no
+
+# (可選) 同時允許 SSH Key (給服務系統用)
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+
+# 失敗嘗試
+MaxAuthTries 3
+MaxSessions 5
+LoginGraceTime 30
+
+# 禁止 root 登入 (Windows 為 Administrator)
+PermitRootLogin no
+# 拒絕 Windows 管理員透過 SSH 登入
+DenyUsers Administrator administrator SF\Administrator
+
+# ===== 強加密 (停用弱演算法, 對齊 Hardening 要求) =====
+# Ciphers
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+
+# Key Exchange (停用 SHA1)
+KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512
+
+# MAC (停用 SHA1, 僅 SHA2+)
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
+
+# Host Key Algorithms (停用 ssh-rsa SHA1)
+HostKeyAlgorithms ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,rsa-sha2-512,rsa-sha2-256
+
+# ===== SFTP 子系統 =====
+# 注意: Windows 版用內建 sftp-server.exe
+Subsystem sftp sftp-server.exe
+
+# ===== chroot 業務代號帳號到 D:\DataExchange\u0X\inbound =====
+# 每個 u0X 帳號被 jail 到自己的 inbound 目錄, 看不到其他部門
+# (Windows OpenSSH 從 8.x 起支援 ChrootDirectory)
+
+# 群組 sftp_users 內所有帳號:
+Match Group sftp_users
+    ChrootDirectory D:/DataExchange/%u/inbound
+    ForceCommand internal-sftp -d /
+    AllowTcpForwarding no
+    X11Forwarding no
+    PermitTunnel no
+    AllowAgentForwarding no
+    PasswordAuthentication yes
+    PubkeyAuthentication yes
+
+# ===== 一般 (Administrator / IT) 登入限制 =====
+# 不允許密碼登入, 只允許 SSH Key
+Match User Administrator
+    PasswordAuthentication no
+    PubkeyAuthentication yes
+
+# ===== Log =====
+SyslogFacility AUTH
+LogLevel INFO
+# Windows OpenSSH 將 log 寫到 Event Viewer (OpenSSH/Operational)
+# 也可指定檔案: SyslogFacility 後接 path (新版支援)
+
+# ===== 反 abuse =====
+ClientAliveInterval 60
+ClientAliveCountMax 3
+TCPKeepAlive yes
+
+# ===== Banner (顯示授權聲明, 對齊金融業內外稽) =====
+Banner C:/ProgramData/ssh/banner.txt
+
+# ===== 不啟用的東西 (安全考量) =====
+UseDNS no
+GatewayPorts no
+PermitUserEnvironment no
+StreamLocalBindUnlink no
+StrictModes no
+# 註: Windows 版若啟用 StrictModes 會因為 NTFS ACL 與 Linux 不同而出錯
