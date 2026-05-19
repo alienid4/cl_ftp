@@ -26,8 +26,22 @@
 - 8 個 Security 開關啟用 (Dependabot / Secret scanning / Push protection 等)
 - v1.0.0 Release 發布 (source code only, **沒附** 343 MB zip — classifier 擋, 改走 server 分發)
 
-### 晚上
-- 使用者開始 SF 主機部署, 跑 install_offline.ps1 報「找不到 installers」(#007)
+
+### 2026-05-19 補充: 啟動 SOP 文件
+
+- 使用者問: install_offline.ps1 跑完後怎麼啟動?
+- 寫 docs/startup_sop.md, 含 8 個 step:
+  0. health_check 驗證
+  1. SSL 憑證匯入 + 綁 IIS
+  2. 建 u01~u04 SFTP 帳號
+  3. 建 AD 群組 (請 AD admin)
+  4. 通知 PAM 納管
+  5. 建 AuditLog DB Schema
+  6. 設定 SMB Share + ACL
+  7. NSSM 註冊 Portal + 啟動
+  8. 端到端煙霧測試
+- 預估 60-90 分鐘走完 8 步
+, 跑 install_offline.ps1 報「找不到 installers」(#007)
 - 緊急修 install_offline.ps1 加自動偵測 → commit `63b725c`
 - 新增 patch_bundle_paths.ps1 + known_issues.md → commit `e4a4bdf`
 - **建立 `patches/` 目錄 + 規範**, 第一個 patch v1.0.0.1 → commit `c79440d`
