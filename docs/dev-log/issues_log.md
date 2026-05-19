@@ -16,6 +16,62 @@
 
 ---
 
+## #015 ✅ health_check.ps1 兩處 PS 5.1 / null 崩潰
+
+| 欄位 | 內容 |
+|---|---|
+| **發現日期** | 2026-05-19 |
+| **狀態** | ✅ 已解決 (patch v1.0.0.7) |
+| **症狀** | `health_check.ps1` 跑到 NTP / Defender 段 throw exception |
+| **錯誤 1** | Line 102: `($ntpStatus \| Select-String 'Source:').ToString()` 在沒 match 時 null.ToString() 炸 — `InvokeMethodOnNull` |
+| **錯誤 2** | Line 152: `((Get-Date) - $defStatus.AntivirusSignatureLastUpdated).TotalHours` 在 `AntivirusSignatureLastUpdated` 是 string 時 — `op_Subtraction MethodCountCouldNotFindBest` |
+| **解法** | Line 102: 加 null check + Select-Object -First 1<br/>Line 152: `[datetime]` 強制 cast + try-catch |
+| **影響檔** | `scripts/health_check.ps1` |
+| **Patch** | [v1.0.0.7](../../patches/v1.0.0.7/) |
+
+---
+
+## #014 ✅ install_offline.ps1 OpenSSH 偵測沒考慮 portable
+
+| 欄位 | 內容 |
+|---|---|
+| **發現日期** | 2026-05-19 |
+| **狀態** | ✅ 已解決 (patch v1.0.0.7) |
+| **症狀** | portable (v1.0.0.5) 裝完 sshd service 已 Running, 但 install_offline.ps1 重跑時 Step 7 OpenSSH 仍報 fail 0x800f0907 (用 WindowsCapability 偵測, portable 版顯示 NotPresent) |
+| **解法** | install_offline.ps1 + deploy/03_install_openssh.ps1 雙軌偵測: 先看 `Get-Service sshd` 存在 → portable / FoD 通用; fail 訊息也加 Portable 路線 (option A) |
+| **影響檔** | `deploy/offline/install_offline.ps1`, `deploy/03_install_openssh.ps1` |
+| **Patch** | [v1.0.0.7](../../patches/v1.0.0.7/) |
+
+---
+
+## #013 ✅ 01_setup_directories.ps1 PS 5.1 解析錯誤
+
+| 欄位 | 內容 |
+|---|---|
+| **發現日期** | 2026-05-19 |
+| **狀態** | ✅ 已解決 (patch v1.0.0.7) |
+| **症狀** | PS 5.1 跑 `$paths.Add(Join-Path $Root $d)` parser error: 「運算式或陳述式中有未預期的 ')' 語彙基元」 |
+| **根本原因** | PS 5.1 不接受 method-call argument 內直接放 cmdlet (PS 7 可以), 要用雙括號包成 expression |
+| **解法** | 全部 `$x.Add(Join-Path ...)` 改 `$x.Add( (Join-Path ...) )` (extra parens) |
+| **影響檔** | `deploy/01_setup_directories.ps1` |
+| **Patch** | [v1.0.0.7](../../patches/v1.0.0.7/) |
+
+---
+
+## #012 ✅ 00_check_prereqs.ps1 D: 100 GB 門檻太緊
+
+| 欄位 | 內容 |
+|---|---|
+| **發現日期** | 2026-05-19 |
+| **狀態** | ✅ 已解決 (patch v1.0.0.7) |
+| **症狀** | D: 97.4 GB 被判 FAIL 擋住後續步驟 |
+| **根本原因** | 門檻設 100 GB (規畫生產配置), 但開發/PoC 機器常常 97~99 GB 邊緣 |
+| **解法** | 門檻降到 30 GB (足夠啟動), <100 GB 仍 OK 但提示「生產建議 >= 100 GB」 |
+| **影響檔** | `deploy/00_check_prereqs.ps1` |
+| **Patch** | [v1.0.0.7](../../patches/v1.0.0.7/) |
+
+---
+
 ## #011 ✅ Patch UX: 想任意目錄跑 + zip 自動找 + 不要 mirror 第三方 binary
 
 | 欄位 | 內容 |
