@@ -94,17 +94,44 @@ if (-not $isAdmin) {
 }
 Write-Host "[ok] 管理員權限"
 
-# bundle 完整性
+# bundle 完整性 — 自動偵測 installers 位置
 $installersDir = Join-Path $BundleDir 'installers'
 $wheelsDir = Join-Path $BundleDir 'python_wheels'
+
+# 若 BundleDir 下沒 installers/, 嘗試 sf_binaries/ 子目錄 (fetch_binaries_win11.ps1 的結構)
+if (-not (Test-Path $installersDir)) {
+    $altInstallers = Join-Path $BundleDir 'sf_binaries\installers'
+    $altWheels = Join-Path $BundleDir 'sf_binaries\python_wheels'
+    if (Test-Path $altInstallers) {
+        Write-Host "[info] 偵測到 sf_binaries/ 子目錄結構, 自動切換路徑" -ForegroundColor Cyan
+        $installersDir = $altInstallers
+        $wheelsDir = $altWheels
+    }
+}
+
+# deploy/ 目錄 — 若 BundleDir 是 deploy/offline/, 退一級
 $deployDir = Join-Path $BundleDir 'deploy'
+if (-not (Test-Path $deployDir)) {
+    $altDeploy = Join-Path (Split-Path $BundleDir -Parent) '.'   # 退一層
+    $altDeploy2 = Split-Path $BundleDir -Parent                  # 退一層 (deploy/offline 退到 deploy)
+    if (Test-Path (Join-Path $altDeploy2 '00_check_prereqs.ps1')) {
+        $deployDir = $altDeploy2
+        Write-Host "[info] deploy/ 偵測到上一層: $deployDir" -ForegroundColor Cyan
+    }
+}
 
 if (-not (Test-Path $installersDir)) {
-    Write-Host "[FAIL] 找不到 installers 目錄: $installersDir" -ForegroundColor Red
-    Write-Host "  確認 bundle 完整解壓" -ForegroundColor Yellow
+    Write-Host "[FAIL] 找不到 installers 目錄" -ForegroundColor Red
+    Write-Host "  嘗試了:" -ForegroundColor Yellow
+    Write-Host "    $BundleDir\installers"
+    Write-Host "    $BundleDir\sf_binaries\installers"
+    Write-Host "  解法: 跑 install_offline.ps1 前先把 installers / python_wheels 搬到 BundleDir 根目錄" -ForegroundColor Yellow
     exit 1
 }
-Write-Host "[ok] bundle 結構正常: $BundleDir"
+Write-Host "[ok] bundle 結構正常"
+Write-Host "     installers: $installersDir"
+Write-Host "     wheels:     $wheelsDir"
+Write-Host "     deploy:     $deployDir"
 
 # DbMode 檢查
 if ($DbMode -eq 'CorpDB' -and -not $CorpDBServer) {
