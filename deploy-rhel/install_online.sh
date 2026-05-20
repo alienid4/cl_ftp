@@ -124,50 +124,97 @@ echo "[info] 跑 install_all.sh (約 5-10 分鐘)"
 SF_ACCOUNTS="$SF_ACCOUNTS" SF_PASSWORD="$SF_PASSWORD" \
     bash ./deploy-rhel/install_all.sh
 
-# === Step 4: 驗證 + 顯示訪問網址 ===
-step "Step 4: 驗證部署"
+# === Step 4: 嚴格驗證 (retry 60 秒) ===
+step "Step 4: 驗證部署 (等服務真起來)"
 
+# 基本 service 狀態
 echo ""
-echo "Service 狀態:"
-systemctl is-active sshd nginx postgresql sf-portal 2>&1 | paste -sd ', '
+echo "Service 即時狀態:"
+for svc in sshd nginx postgresql sf-portal; do
+    s=$(systemctl is-active $svc 2>/dev/null || echo not-found)
+    printf "  %-15s : %s\n" "$svc" "$s"
+done
 
+# 嚴格等 Portal 真的起來 (retry 30 次, 每次 2 秒, 共 60 秒)
 echo ""
-echo "Port 監聽:"
-ss -tlnp 2>/dev/null | grep -E ':(22|80|443|5000|5432)\b' | awk '{print $4}' | sort -u | sed 's/^/  /'
+echo "等 Portal 起來 (retry 60s)..."
+PORTAL_OK=false
+for i in $(seq 1 30); do
+    # sf-portal service active
+    if ! systemctl is-active sf-portal &>/dev/null; then
+        sleep 2
+        continue
+    fi
+    # 直連 Flask 5000 (Portal /auth/login 通常 200/302)
+    code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 http://localhost:5000/auth/login 2>/dev/null || echo 000)
+    if [[ "$code" =~ ^(200|302|401|403)$ ]]; then
+        PORTAL_OK=true
+        ok "Portal 起來了 (HTTP $code)"
+        break
+    fi
+    sleep 2
+done
 
-echo ""
-echo "Portal HTTP 測試 (本機):"
-if curl -s -o /dev/null -w "  http://localhost:5000/  HTTP %{http_code}\n" -m 5 http://localhost:5000/; then
-    :
-else
-    warn "Portal 5000 沒回應"
+# 嚴格驗證 nginx 反向代理
+NGINX_OK=false
+if $PORTAL_OK; then
+    code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 http://localhost/ 2>/dev/null || echo 000)
+    if [[ "$code" =~ ^(200|302|401|403)$ ]]; then
+        NGINX_OK=true
+        ok "nginx 反向代理 OK (HTTP $code)"
+    fi
 fi
-if curl -s -o /dev/null -w "  http://localhost/      HTTP %{http_code}\n" -m 5 http://localhost/; then
-    :
-else
-    warn "nginx 80 沒回應"
+
+# === 結果分流 ===
+if ! $PORTAL_OK; then
+    echo ""
+    echo -e "${RED}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║   ❌ 驗證失敗 — Portal 沒起來, 暫停 USER 測試                ║${NC}"
+    echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+
+    echo "=== sf-portal service 狀態 ==="
+    systemctl status sf-portal --no-pager -l 2>&1 | head -20
+
+    echo ""
+    echo "=== sf-portal log (最後 50 行) ==="
+    journalctl -u sf-portal -n 50 --no-pager 2>&1 || echo "(no log)"
+
+    echo ""
+    echo "=== 09_deploy_portal.sh 重跑診斷 ==="
+    if [[ -f "$SF_TARGET/deploy-rhel/09_deploy_portal.sh" ]]; then
+        sudo bash "$SF_TARGET/deploy-rhel/09_deploy_portal.sh" 2>&1 | tail -30
+    fi
+
+    echo ""
+    echo "→ 修完後跑 health check:"
+    echo "  curl -fsSL https://github.com/alienid4/cl_ftp/raw/main/deploy-rhel/health_check.sh | sudo bash"
+    echo ""
+    echo "→ 或重跑本腳本:"
+    echo "  curl -fsSL https://github.com/alienid4/cl_ftp/raw/main/release-zip/latest-install.sh | sudo bash"
+    exit 1
 fi
 
-# === 完成 ===
-step "完成 - 訪問網址"
+# === 成功 ===
+step "✅ 完成 - 可給 USER 測試"
 MAIN_IP=$(ip -4 addr | grep -E 'inet ' | grep -v '127.0.0.1' | head -1 | awk '{print $2}' | cut -d/ -f1)
-if [[ -n "$MAIN_IP" ]]; then
-    echo "  Portal HTTP   : http://$MAIN_IP/"
-    echo "  Portal (Flask): http://$MAIN_IP:5000/"
-    echo "  SFTP          : sftp $SF_ACCOUNTS@$MAIN_IP   (密碼: $SF_PASSWORD)"
-    echo "  SSH 管理      : ssh root@$MAIN_IP"
-fi
 
 echo ""
-ok "Online Install 完成 ✓"
+echo -e "${BOLD}${GREEN}訪問網址 (已驗證可達):${NC}"
 echo ""
-echo "→ 沒用 bundle / install_offline.sh / EXCLUDE_PATTERN"
-echo "→ 沒 file conflict"
+if $NGINX_OK; then
+    echo -e "  ${BOLD}Portal (給 USER 用)${NC}  : http://$MAIN_IP/"
+    echo -e "  Portal (debug)        : http://$MAIN_IP:5000/"
+else
+    echo -e "  ${YELLOW}Portal (僅 Flask 直連)${NC} : http://$MAIN_IP:5000/"
+    warn "nginx 80 沒回應, 暫時用 5000 port; nginx 之後修"
+fi
+echo "  SFTP                  : sftp $SF_ACCOUNTS@$MAIN_IP   (密碼: $SF_PASSWORD)"
+echo "  SSH 管理              : ssh root@$MAIN_IP"
+
+echo ""
+ok "Online Install 完成, 服務驗證通過, 可給 USER 測試 ✓"
+echo ""
 echo "→ 之後升級:"
 echo "    cd $SF_TARGET && sudo git pull && sudo ./deploy-rhel/install_all.sh"
 echo "    sudo dnf upgrade"
-echo ""
-echo "故障排除 (如果 Portal 沒起來):"
-echo "  systemctl status sf-portal --no-pager -l"
-echo "  journalctl -u sf-portal -n 100 --no-pager"
-echo "  curl -v http://localhost:5000/"
