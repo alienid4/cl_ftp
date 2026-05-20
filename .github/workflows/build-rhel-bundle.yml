@@ -41,24 +41,52 @@ jobs:
         run: |
           mkdir -p output
           docker run --rm \
-            -v "${PWD}:/repo" \
+            -v "${PWD}:/repo:ro" \
             -v "${PWD}/output:/output" \
             rockylinux:${{ steps.rhel.outputs.version }} \
-            bash -c "
-              set -e
-              dnf install -y --quiet git python3-pip tar bzip2 2>&1 | tail -5
-              cp -r /repo /tmp/sf
-              cd /tmp/sf
-              bash ./deploy-rhel/build_offline_bundle.sh /output/sf-rhel${{ steps.rhel.outputs.version }}-bundle
-              ls -lah /output/*.tar.gz
-            "
+            bash -ex -c '
+              echo "=== Container OS ==="
+              cat /etc/redhat-release
 
-      - name: Move output to release-zip
+              echo ""
+              echo "=== Install build deps ==="
+              dnf install -y --allowerasing \
+                  git python3 python3-pip tar bzip2 gzip findutils which rsync \
+                  curl wget openssl bc
+
+              echo ""
+              echo "=== Copy repo to writable location ==="
+              mkdir -p /tmp/sf
+              cp -a /repo/. /tmp/sf/
+              cd /tmp/sf
+
+              echo ""
+              echo "=== Pre-flight ==="
+              ls -la deploy-rhel/
+              echo "build_offline_bundle.sh stat:"
+              stat deploy-rhel/build_offline_bundle.sh
+
+              echo ""
+              echo "=== Run build_offline_bundle.sh ==="
+              bash deploy-rhel/build_offline_bundle.sh /output/sf-bundle || {
+                  rc=$?
+                  echo "[FAIL] exit code $rc"
+                  echo "=== Output dir state ==="
+                  ls -lah /output/ || true
+                  exit $rc
+              }
+
+              echo ""
+              echo "=== Final output ==="
+              ls -lah /output/
+            '
+
+      - name: List output
         run: |
-          ls -lah output/
-          mv output/sf-rhel*-bundle-*.tar.gz output/
-          mv output/sf-rhel*-bundle-*.tar.gz.sha256 output/
-          ls -lah output/
+          echo "=== output/ ==="
+          ls -lah output/ || true
+          echo ""
+          find output -type f | head -20
 
       - name: Upload to Release (if pushed as tag)
         if: startsWith(github.ref, 'refs/tags/v')

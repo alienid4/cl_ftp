@@ -47,49 +47,77 @@ cd "$OUTPUT_DIR"
 step "1. 抓 RPM 套件 (含 deps)"
 cd rpms
 
+# 啟用 EPEL repo (有些套件像 mailx / s-nail 在 EPEL)
+dnf install -y epel-release 2>&1 | tail -3 || warn "EPEL 安裝跳過"
+
 # 套件清單 (對應 deploy-rhel/*.sh 內 dnf install 的所有套件)
-RPMS=(
+# 分批抓, 個別失敗不影響其他
+RPM_GROUPS=(
     # 基本工具
-    git curl wget tar unzip bzip2 vim-enhanced bc openssl
+    "git curl wget tar unzip bzip2 vim-enhanced bc openssl which"
 
     # OpenSSH (RHEL 預裝, 但保險起見)
-    openssh openssh-server openssh-clients
+    "openssh openssh-server openssh-clients"
 
     # PostgreSQL
-    postgresql postgresql-server postgresql-contrib python3-psycopg2
+    "postgresql postgresql-server postgresql-contrib python3-psycopg2"
 
     # Web (nginx + Python)
-    nginx
-    python3 python3-pip python3-virtualenv python3-setuptools
+    "nginx python3 python3-pip python3-virtualenv python3-setuptools"
 
     # Samba
-    samba samba-common samba-client cifs-utils
+    "samba samba-common samba-client cifs-utils"
 
     # NTP
-    chrony
+    "chrony"
 
-    # 監控 + 告警
-    sysstat audit mailx
+    # 監控 + 告警 (s-nail 取代 mailx in RHEL 9)
+    "sysstat audit"
 
     # AD 整合 (07_join_ad.sh 用)
-    realmd sssd sssd-tools adcli samba-common-tools krb5-workstation
-    oddjob oddjob-mkhomedir authselect
+    "realmd sssd sssd-tools adcli samba-common-tools krb5-workstation"
+    "oddjob oddjob-mkhomedir authselect"
 
-    # 防火牆 (預裝)
-    firewalld
+    # 防火牆
+    "firewalld"
 )
 
-echo "套件清單:"
-printf '  %s\n' "${RPMS[@]}"
-echo ""
+# 額外: mail 工具 (RHEL 8 用 mailx, RHEL 9 改 s-nail)
+OPTIONAL_RPMS=(
+    "mailx s-nail"
+)
 
-# 跑 dnf download --resolve --alldeps 抓完整依賴樹
+echo "RPM 群組總數: ${#RPM_GROUPS[@]}"
+echo ""
 echo "下載中 (約 200-300 MB)..."
-dnf download --resolve --alldeps --downloaddir="$(pwd)" "${RPMS[@]}" 2>&1 | tail -10
+
+FAILED_GROUPS=()
+for group in "${RPM_GROUPS[@]}"; do
+    echo ">>> 抓: $group"
+    if ! dnf download --resolve --alldeps --downloaddir="$(pwd)" $group 2>&1 | tail -3; then
+        warn "群組失敗: $group"
+        FAILED_GROUPS+=("$group")
+    fi
+done
+
+# Optional (有就好, 沒有不擋)
+for group in "${OPTIONAL_RPMS[@]}"; do
+    echo ">>> 可選: $group"
+    dnf download --resolve --alldeps --downloaddir="$(pwd)" $group 2>&1 | tail -3 || warn "可選套件 $group 找不到"
+done
+
+if [[ ${#FAILED_GROUPS[@]} -gt 0 ]]; then
+    warn "${#FAILED_GROUPS[@]} 個套件群組抓失敗 (但繼續打包):"
+    printf '  - %s\n' "${FAILED_GROUPS[@]}"
+fi
 
 RPM_COUNT=$(ls *.rpm 2>/dev/null | wc -l)
-RPM_SIZE=$(du -sh . | awk '{print $1}')
-ok "抓到 $RPM_COUNT 個 RPM, 共 $RPM_SIZE"
+RPM_SIZE=$(du -sh . 2>/dev/null | awk '{print $1}')
+ok "抓到 $RPM_COUNT 個 RPM, 共 ${RPM_SIZE:-0}"
+
+if [[ "$RPM_COUNT" -lt 50 ]]; then
+    warn "RPM 數量異常少 ($RPM_COUNT), 預期 > 100. 可能 dnf repo 沒設好"
+fi
 
 step "2. 抓 Python wheels (Portal 用)"
 cd "$OUTPUT_DIR/wheels"
@@ -120,12 +148,31 @@ WHL_COUNT=$(ls *.whl *.tar.gz 2>/dev/null | wc -l)
 WHL_SIZE=$(du -sh . | awk '{print $1}')
 ok "抓到 $WHL_COUNT 個 wheels, 共 $WHL_SIZE"
 
-step "3. Clone repo (含 deploy-rhel + portal + config + sql)"
+step "3. 拷 repo (從本地 OR 從 GitHub clone)"
 cd "$OUTPUT_DIR/repo"
-git clone --depth=1 https://github.com/alienid4/cl_ftp .
-REPO_VER=$(git describe --tags --always 2>/dev/null || echo unknown)
-rm -rf .git
-ok "Repo cloned (version: $REPO_VER)"
+
+# 偵測是否在 repo 目錄內跑 (CI / 本地 dev)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOCAL_REPO="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+if [[ -f "$LOCAL_REPO/portal/wsgi.py" ]]; then
+    echo "[info] 從本地 repo 拷 ($LOCAL_REPO)"
+    # 排除 .git, release-zip, output, .github 等
+    rsync -a \
+        --exclude='.git' \
+        --exclude='release-zip' \
+        --exclude='output' \
+        --exclude='node_modules' \
+        --exclude='__pycache__' \
+        "$LOCAL_REPO/" .
+    REPO_VER=$(cd "$LOCAL_REPO" && git describe --tags --always 2>/dev/null || echo local)
+else
+    echo "[info] 本地沒 repo, 從 GitHub clone"
+    git clone --depth=1 https://github.com/alienid4/cl_ftp .
+    REPO_VER=$(git describe --tags --always 2>/dev/null || echo unknown)
+    rm -rf .git
+fi
+ok "Repo 就位 (version: $REPO_VER)"
 
 step "4. 寫 install_offline.sh (給 SF 主機跑)"
 cat > "$OUTPUT_DIR/install_offline.sh" <<'INSTALLEOF'
