@@ -1,0 +1,79 @@
+name: Build EPEL Python RPM Bundle
+
+# 用途: 在 Rocky Linux 9 容器抓 EPEL Python RPMs 打成 tar
+#       SF 主機 (無 EPEL) 用 fix_portal.sh 拉這 tar 安裝
+#
+# 觸發:
+#   1. 手動 (Actions 頁面 Run workflow)
+#   2. push: deploy-rhel/build_epel_pyrpms.sh 改了自動跑
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'deploy-rhel/build_epel_pyrpms.sh'
+      - '.github/workflows/build-epel-pyrpms.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build EPEL Python RPM bundle in Rocky 9 container
+        run: |
+          mkdir -p output
+          docker run --rm \
+            -v "${PWD}:/repo:ro" \
+            -v "${PWD}/output:/output" \
+            rockylinux:9 \
+            bash -ex -c '
+              echo "=== Container OS ==="
+              cat /etc/redhat-release
+
+              echo ""
+              echo "=== Run build script ==="
+              bash /repo/deploy-rhel/build_epel_pyrpms.sh /output
+
+              echo ""
+              echo "=== Output ==="
+              ls -lh /output/
+            '
+
+      - name: Show output
+        run: |
+          echo "=== output/ ==="
+          ls -lh output/
+          echo ""
+          echo "=== sha256 ==="
+          cat output/sf-epel-pyrpms.tar.gz.sha256
+
+      - name: Commit tar back to release-zip/
+        run: |
+          # 把 tar 放到 release-zip/ 並 commit
+          cp output/sf-epel-pyrpms.tar.gz release-zip/sf-epel-pyrpms.tar.gz
+          cp output/sf-epel-pyrpms.tar.gz.sha256 release-zip/sf-epel-pyrpms.tar.gz.sha256
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add release-zip/sf-epel-pyrpms.tar.gz release-zip/sf-epel-pyrpms.tar.gz.sha256
+
+          if git diff --staged --quiet; then
+            echo "no changes to commit"
+            exit 0
+          fi
+
+          git commit -m "ci: update EPEL Python RPM bundle [skip-version]
+
+Built from deploy-rhel/build_epel_pyrpms.sh
+Contains EPEL Python packages for SF Portal (Flask + deps).
+
+Co-Authored-By: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+
+          git push origin HEAD:main

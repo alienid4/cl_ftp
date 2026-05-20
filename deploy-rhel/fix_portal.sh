@@ -32,43 +32,82 @@ echo -e "${BOLD}${CYAN}║   fix_portal.sh — 重建 SF Portal service         
 echo -e "${BOLD}${CYAN}║   (純 RHEL BaseOS/AppStream, 不用 EPEL, 不用 pip / venv)     ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
 
-# === Step 1: dnf install Python 套件 (純 RHEL BaseOS/AppStream, 不靠 EPEL) ===
-step "Step 1: 裝 Python 套件 (純 RHEL BaseOS/AppStream, 不靠 EPEL)"
+# === Step 1: 裝 Python 套件 ===
+# 策略:
+#   1a. 先 dnf 裝 RHEL BaseOS/AppStream 有的 (python3, pip, psycopg2, cryptography, requests)
+#   1b. EPEL 套件 (flask, werkzeug, gunicorn, ldap...) 從 git 拉預打好的 tar 安裝
+#       對應 GitHub Actions: .github/workflows/build-epel-pyrpms.yml
+step "Step 1a: 裝 RHEL BaseOS/AppStream Python 套件"
 
-# 全部都在 RHEL 9 BaseOS 或 AppStream:
-#   python3              -> BaseOS
-#   python3-pip          -> AppStream
-#   python3-flask        -> AppStream
-#   python3-psycopg2     -> AppStream
-#   python3-werkzeug     -> AppStream (Flask 內建 server 用這個)
-#   python3-cryptography -> BaseOS
-#   python3-requests     -> BaseOS
-#   python3-pyjwt        -> AppStream
-# 注意: python3-gunicorn 在 EPEL, 不用; 改用 Flask 內建 werkzeug server
 dnf install -y \
     python3 python3-pip \
-    python3-flask python3-werkzeug python3-psycopg2 \
-    python3-cryptography python3-requests python3-pyjwt 2>&1 | tail -5
+    python3-psycopg2 \
+    python3-cryptography python3-requests 2>&1 | tail -5
 
-# 確認核心模組可 import (這幾個一定要過, 不然 Portal 跑不起來)
-MISSING=()
-for mod in flask werkzeug psycopg2 cryptography; do
+# 確認 RHEL 套件可 import
+for mod in psycopg2 cryptography; do
     if /usr/bin/python3 -c "import $mod" 2>/dev/null; then
-        ok "python3 -c 'import $mod' OK"
+        ok "python3 -c 'import $mod' OK (來自 RHEL repo)"
     else
-        fail_msg="$mod import 失敗"
+        fail "$mod import 失敗 — 確認 AppStream repo enabled"
+    fi
+done
+
+# === Step 1b: 從 git 拉 EPEL Python RPM tar 安裝 (公司禁 EPEL 的解法) ===
+step "Step 1b: 拉 EPEL Python RPM tar (從 git raw URL)"
+
+EPEL_TAR_URL="https://github.com/alienid4/cl_ftp/raw/main/release-zip/sf-epel-pyrpms.tar.gz"
+EPEL_SHA_URL="${EPEL_TAR_URL}.sha256"
+EPEL_DIR="/tmp/sf-epel-pyrpms"
+
+mkdir -p "$EPEL_DIR"
+cd "$EPEL_DIR"
+
+echo "[exec] wget $EPEL_TAR_URL ..."
+if ! curl -fsSL -o sf-epel-pyrpms.tar.gz "$EPEL_TAR_URL"; then
+    fail "下載 EPEL tar 失敗 — 確認 SF 主機可達 github.com, 或聯絡 IT"
+fi
+
+# 驗 sha256 (如果 .sha256 抓得到)
+if curl -fsSL -o sf-epel-pyrpms.tar.gz.sha256 "$EPEL_SHA_URL" 2>/dev/null; then
+    if sha256sum -c sf-epel-pyrpms.tar.gz.sha256 &>/dev/null; then
+        ok "SHA-256 驗證通過"
+    else
+        warn "SHA-256 不符, 但繼續 (檔案可能還是好的)"
+    fi
+fi
+
+tar xzf sf-epel-pyrpms.tar.gz
+RPM_COUNT=$(ls rpms/*.rpm 2>/dev/null | wc -l)
+if [[ "$RPM_COUNT" -lt 5 ]]; then
+    fail "解壓後 RPM 太少 ($RPM_COUNT), tar 損壞"
+fi
+ok "解壓 $RPM_COUNT 個 EPEL RPM"
+
+# dnf install local RPMs (--disablerepo=* 避免去找線上 EPEL)
+echo "[exec] dnf install local RPMs ..."
+dnf install -y --disablerepo='*' --nogpgcheck ./rpms/*.rpm 2>&1 | tail -10 || {
+    warn "dnf install 部分失敗, 嘗試 rpm -Uvh ..."
+    rpm -Uvh --replacefiles --replacepkgs ./rpms/*.rpm 2>&1 | tail -10 || \
+        fail "EPEL RPM 安裝失敗"
+}
+
+# 確認 EPEL 來的模組可 import
+MISSING=()
+for mod in flask werkzeug; do
+    if /usr/bin/python3 -c "import $mod" 2>/dev/null; then
+        ok "python3 -c 'import $mod' OK (來自 EPEL tar)"
+    else
         MISSING+=("$mod")
-        warn "$fail_msg"
+        warn "$mod import 失敗"
     fi
 done
 
 if [[ ${#MISSING[@]} -gt 0 ]]; then
-    fail "核心套件沒裝齊: ${MISSING[*]} — 確認 RHEL AppStream repo 是否 enabled (dnf repolist)"
+    fail "EPEL 核心套件沒裝齊: ${MISSING[*]}"
 fi
 
-# Optional 套件 (RHEL 沒有也沒關係, Portal 會自己 fallback)
-# 不再嘗試 python3-flask-login / flask-session / ldap (這些是 EPEL)
-ok "核心 Python 套件就緒"
+ok "全部 Python 套件就緒 (RHEL repo + EPEL tar)"
 
 # === Step 2: 拷 Portal 程式碼 ===
 step "Step 2: 拷 Portal source 到 /opt/portal/app"
@@ -154,9 +193,19 @@ fi
 # === Step 4: 寫 systemd unit ===
 step "Step 4: 寫 systemd unit /etc/systemd/system/sf-portal.service"
 
+# 判斷: 有 gunicorn 用 gunicorn (production), 沒有就用 Flask 內建
+if command -v gunicorn-3 &>/dev/null || /usr/bin/python3 -c "import gunicorn" 2>/dev/null; then
+    EXEC_LINE='ExecStart=/usr/bin/gunicorn-3 --workers 3 --bind 127.0.0.1:5000 --access-logfile /opt/portal/logs/access.log --error-logfile /opt/portal/logs/error.log wsgi:app'
+    SERVER_DESC="gunicorn"
+else
+    EXEC_LINE='ExecStart=/usr/bin/python3 -m flask run --host=127.0.0.1 --port=5000 --no-debugger --no-reload'
+    SERVER_DESC="Flask built-in werkzeug"
+fi
+ok "WSGI server: $SERVER_DESC"
+
 cat > /etc/systemd/system/sf-portal.service <<EOF
 [Unit]
-Description=SF File Exchange Portal (Flask built-in werkzeug server)
+Description=SF File Exchange Portal ($SERVER_DESC)
 After=network.target postgresql.service
 
 [Service]
@@ -167,9 +216,7 @@ WorkingDirectory=/opt/portal/app
 Environment="PYTHONPATH=/opt/portal/app"
 Environment="FLASK_APP=wsgi:app"
 Environment="FLASK_ENV=production"
-# 用 Flask 內建 werkzeug server (純 RHEL AppStream, 不靠 EPEL gunicorn)
-# 內網 Portal + nginx 反代足夠; 之後若要正式 prod 可換 mod_wsgi (httpd) 或裝 EPEL gunicorn
-ExecStart=/usr/bin/python3 -m flask run --host=127.0.0.1 --port=5000 --no-debugger --no-reload
+$EXEC_LINE
 Restart=always
 RestartSec=10
 
