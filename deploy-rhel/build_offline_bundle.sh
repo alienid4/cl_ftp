@@ -204,8 +204,10 @@ ok()    { echo -e "${GREEN}[ok]${NC} $*"; }
 step "Step 1: 安裝 RPM (離線, 用 bundle 內的)"
 if [[ -d "$BUNDLE_DIR/rpms" ]] && ls "$BUNDLE_DIR/rpms"/*.rpm &>/dev/null; then
     echo "RPM 數量: $(ls $BUNDLE_DIR/rpms/*.rpm | wc -l)"
-    dnf install -y --disablerepo='*' "$BUNDLE_DIR"/rpms/*.rpm 2>&1 | tail -5
-    ok "RPM 安裝完成"
+    # --skip-broken: 跳過跟主機已裝衝突的 (如 systemd, glibc 等 protected packages)
+    # 主機本來就有的 base RPM 不該被 bundle 取代
+    dnf install -y --disablerepo='*' --skip-broken "$BUNDLE_DIR"/rpms/*.rpm 2>&1 | tail -10
+    ok "RPM 安裝完成 (跳過衝突的 base packages)"
 else
     echo "[skip] $BUNDLE_DIR/rpms 沒有 RPM, 跳過"
 fi
