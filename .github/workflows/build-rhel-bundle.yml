@@ -1,0 +1,109 @@
+name: Build RHEL Offline Bundle
+
+# 觸發條件:
+#   1. push tag v*  (例 v2.0.0.4)
+#   2. 手動 (在 GitHub Actions 頁面 click "Run workflow")
+on:
+  push:
+    tags:
+      - 'v2.*'
+  workflow_dispatch:
+    inputs:
+      rhel_version:
+        description: 'RHEL major version (8 or 9)'
+        required: true
+        default: '9'
+        type: choice
+        options:
+          - '8'
+          - '9'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine RHEL version
+        id: rhel
+        run: |
+          if [[ -n "${{ inputs.rhel_version }}" ]]; then
+            echo "version=${{ inputs.rhel_version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=9" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build bundle in Rocky ${{ steps.rhel.outputs.version }}
+        run: |
+          mkdir -p output
+          docker run --rm \
+            -v "${PWD}:/repo" \
+            -v "${PWD}/output:/output" \
+            rockylinux:${{ steps.rhel.outputs.version }} \
+            bash -c "
+              set -e
+              dnf install -y --quiet git python3-pip tar bzip2 2>&1 | tail -5
+              cp -r /repo /tmp/sf
+              cd /tmp/sf
+              bash ./deploy-rhel/build_offline_bundle.sh /output/sf-rhel${{ steps.rhel.outputs.version }}-bundle
+              ls -lah /output/*.tar.gz
+            "
+
+      - name: Move output to release-zip
+        run: |
+          ls -lah output/
+          mv output/sf-rhel*-bundle-*.tar.gz output/
+          mv output/sf-rhel*-bundle-*.tar.gz.sha256 output/
+          ls -lah output/
+
+      - name: Upload to Release (if pushed as tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            output/sf-rhel*-bundle-*.tar.gz
+            output/sf-rhel*-bundle-*.tar.gz.sha256
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          body: |
+            ## SF File Exchange Server - RHEL ${{ steps.rhel.outputs.version }} 離線安裝包
+
+            ### 下載
+
+            - `sf-rhel${{ steps.rhel.outputs.version }}-bundle-*.tar.gz` (~225 MB) — 主檔
+            - `sf-rhel${{ steps.rhel.outputs.version }}-bundle-*.tar.gz.sha256` — 校驗
+
+            ### 用法
+
+            1. 下載到 Windows PC
+            2. USB 拷到 SF 主機 (RHEL ${{ steps.rhel.outputs.version }})
+            3. 解壓 + 一鍵安裝:
+               ```bash
+               tar xzf sf-rhel${{ steps.rhel.outputs.version }}-bundle-*.tar.gz
+               cd sf-rhel*-bundle
+               sudo SF_ACCOUNTS=u01t SF_PASSWORD='changeme' ./install_offline.sh
+               ```
+
+            ### 內容
+            - RPM packages (postgres / nginx / samba / chrony / python / AD 工具)
+            - Python wheels (Flask / waitress / gunicorn / psycopg2)
+            - Repo source code @ this tag
+
+            ### 對應規範
+            完整 SOP: [docs/runbook/](https://github.com/${{ github.repository }}/tree/main/docs/runbook)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact (if manual run, no tag)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sf-rhel${{ steps.rhel.outputs.version }}-bundle
+          path: |
+            output/sf-rhel*-bundle-*.tar.gz
+            output/sf-rhel*-bundle-*.tar.gz.sha256
+          retention-days: 30
