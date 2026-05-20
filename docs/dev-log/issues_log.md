@@ -16,6 +16,21 @@
 
 ---
 
+## #017-#023 ✅ Round 4: 路徑統一 + 多腳本 bug (patch v1.0.0.9)
+
+| Issue | 症狀 | 修法 |
+|---|---|---|
+| **#017** _portal 路徑不一致 | SQL DB 建立失敗 `D:\_portal\db\ 目錄查閱失敗`<br/>01_setup_directories 建在 D:\DataExchange\_portal\<br/>但 sql schema / 11/13/15 hardcoded D:\_portal\ | 01 + 02 拆 DataRoot + PortalRoot 兩 root, _portal 移到 D:\_portal\ |
+| **#018** 04 Description 太長 | `New-LocalUser -Description` "Department: FIN..." 49 字元 > 48 限制, sftp_fin/ops 沒建到 | Description 縮短為 "SFTP $d dept account (no interactive logon)" |
+| **#019** 06 PhysicalPath 寫死舊路徑 | IIS PhysicalPath = D:\DataExchange\_portal\app, 不一致 | 改 D:\_portal\app |
+| **#020** 09 Python 找不到 | Get-Command python.exe 找不到 user-only 安裝 | Find-Python 函式多重 fallback (PATH / LocalAppData / Program Files) |
+| **#021** 11 Set-NetFirewallProfile Error 87 | -LogAllowed True 在 PS 5.1 + Server 2022 報 ERROR_INVALID_PARAMETER | 用 GpoBoolean enum + netsh fallback |
+| **#022** 12 FTP 授權重複 | Add-WebConfiguration 重跑時加重複, 「重複集合項目」 | 先 Get-WebConfiguration 檢查, 已加 skip + try-catch |
+| **#023** URL Rewrite / ARR exit=-2144337918 | msiexec 安裝已存在的 module 回非 0 exit code | (留下次修, 不阻塞, 可能已裝) |
+| **Patch** | [v1.0.0.9](../../patches/v1.0.0.9/) | |
+
+---
+
 ## #016 ✅ sshd restart fail (Subsystem 路徑 + Banner 不存在)
 
 | 欄位 | 內容 |

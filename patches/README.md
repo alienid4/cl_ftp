@@ -100,7 +100,8 @@ Invoke-WebRequest https://raw.githubusercontent.com/alienid4/cl_ftp/main/patches
 | **v1.0.0.5** | 2026-05-19 | OpenSSH Portable 一鍵安裝 (Win32-OpenSSH zip, 5 MB, 不需 FoD/ISO) | 881e1ee |
 | **v1.0.0.6** | 2026-05-19 | Patch 通用安裝器 (任意目錄可跑) + zip auto-find + fetch helper | 0eaca2e |
 | **v1.0.0.7** | 2026-05-20 | Round 2 修正 (PS 5.1 相容 + portable OpenSSH 雙軌偵測 + 門檻調整 + health_check null/type) | 9b1674a |
-| **v1.0.0.8** | 2026-05-20 | Round 3 修正 (sshd_config internal-sftp + 自動建 banner.txt) ⭐ 必裝 | (待 commit) |
+| **v1.0.0.8** | 2026-05-20 | Round 3 修正 (sshd_config internal-sftp + 自動建 banner.txt) | d96d51e |
+| **v1.0.0.9** | 2026-05-20 | Round 4 修正 (_portal 路徑統一 + 7 個 deploy 腳本 bug) ⭐ 必裝 | (待 commit) |
 
 ---
 
