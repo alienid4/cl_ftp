@@ -107,6 +107,76 @@ bundle 應該:
 
 ---
 
+## 鐵律 10: Pull 模式優於 Push 打包
+
+部署到「他人的環境」時, **永遠先問**:
+1. 「他的環境有沒有 mirror / registry?」
+2. 「能不能讓他自己 pull?」
+3. **打包 binary 給他裝是最後手段**
+
+### 為什麼
+
+| 反模式 (push) | 正模式 (pull) |
+|---|---|
+| 我在 A 環境 (Rocky 9.7) 打 RPM bundle | 他主機 (RHEL 9.6) 從公司 mirror pull |
+| dnf download --alldeps 抓 311 個 RPM | dnf install 自己解 dep, 抓 ~50 個 |
+| 必撞 file conflict (版本差異) | 不會 conflict |
+| 每撞坑加 EXCLUDE, patch 累積無底洞 | 一次到位 |
+
+### SF 專案血淚教訓
+
+v1.x Windows: 打 .zip 帶 .exe / .msi → NSSM 503 / IIS / wheels / sshd_config 一連串坑 (10 個 patch)
+v2.0 RHEL bundle: 打 .tar.gz 帶 .rpm → file conflict 連環坑 (10 個 patch)
+
+→ 兩次都因為 **打包機 ≠ 目標機**, 必踩坑。
+→ 改 pull (從公司 mirror) 一次到位, 不用 EXCLUDE_PATTERN 打 10 次補丁。
+
+### 決策樹
+
+```
+要部署到他人環境
+       ↓
+他有 yum mirror / pypi mirror / container registry?
+       │
+   是  │  否 (才打 bundle)
+       ↓
+讓他 pull → 完工
+```
+
+---
+
+## 鐵律 11: 評估「公司既有基礎設施」優先
+
+**開工前必問** (寫進 runbook prerequisite):
+
+```markdown
+## 環境問卷 (給公司 IT)
+
+1. 內網 yum/dnf mirror? URL ____
+2. PyPI mirror / Nexus? URL ____
+3. Container registry (Harbor/Nexus/GitLab)? URL ____
+4. AD domain / LDAP? domain ____
+5. 內部 GitHub / GitLab? URL ____
+6. 跳板機 (jumphost)? IP ____
+7. NTP server? IP ____
+8. SMTP relay? IP ____
+9. Backup server? path ____
+10. 是否允許 podman/docker?
+```
+
+90% 公司有 1, 4, 7, 8, 9 (基本維運). 沒有的話自建, **不要重複造輪子**。
+
+### 對應 SF 專案
+
+開工前沒問, 結果:
+- 假設「無外網」→ 打 bundle → file conflict 連環
+- 假設「沒 AD」→ 寫一堆 LDAP integration → PAM 不確定
+- 假設「沒 SMTP」→ 自寫 mail relay 設定 → 公司其實有
+
+問完答案再選方案, 省 50% 時間。
+
+---
+
 ## 鐵律 8: 每次互動結尾**自我檢查**
 
 提交工作前自問:
