@@ -116,6 +116,55 @@ bundle 應該:
 - [ ] git add 沒誤加 binary?
 - [ ] 真實資訊 placeholder 化?
 - [ ] `dev_journal.md` 有追加?
+- [ ] **給使用者跑的指令進了 `docs/runbook/` 了? (鐵律 9)**
+
+---
+
+## 鐵律 9: 每次給使用者跑的「PowerShell 指令套組」進 `docs/runbook/`
+
+使用者問「我下一步做什麼」、「怎麼跑」、「貼什麼指令」 →
+我給的指令**不能只在對話裡丟過去就算**, 必須:
+
+1. **同步寫進 `docs/runbook/v<patch-版本>_<YYYYMMDD>_<HHMM>_<topic>.md`**
+2. **更新 `docs/runbook/README.md` 索引**
+3. **commit + push GitHub**
+4. **回應使用者時, 同時給對話的指令 + GitHub URL** (兩條備援)
+
+### 命名規則
+
+```
+v<patch-版本>_<YYYYMMDD>_<HHMM>_<topic>.md
+```
+
+例:
+- `v1.0.0.10_20260520_0830_linux_user_poc.md`
+- `v1.0.0.11_20260521_1400_fix_https_cert.md`
+
+### Runbook 必含 6 段
+
+1. **元資料表** — 版本 / 日期 / 對象 / 預期結果 / 耗時
+2. **前提條件** — checklist
+3. **操作步驟** — 照順序的 PowerShell, 複製貼用
+4. **預期結果** — 跑完應該看到什麼
+5. **故障排除** — 對應 Linux 等價物 (若使用者是 Linux 背景)
+6. **附錄** — 替代方案 (例: 無外網時怎辦)
+
+### 為什麼這條重要
+
+| 沒這條 | 有這條 |
+|---|---|
+| 使用者問同樣的事三次, 我答三次 | 第二次直接給 URL |
+| 同事接手要問使用者 | 同事自己看 runbook 跑 |
+| 過 1 個月使用者忘了上次怎麼做 | runbook 留 audit 紀錄 |
+| 對話被 compact 後指令消失 | git 永久保存 |
+
+### 例外: 不用進 runbook 的情況
+
+- 純解釋性回答 (「這個概念是什麼意思」)
+- 一次性除錯 (使用者貼錯字, 我說「改成 X 就好」)
+- < 3 行的微小指令
+
+判斷標準: 「下次跑同樣場景, 還會需要這串指令嗎?」是 → runbook。
 
 ---
 
@@ -142,6 +191,15 @@ bundle 應該:
 1. 答覆
 2. 如果答覆內涉及新規範 → 也寫進 SKILL / journal
 
+### 使用者要求跑 PowerShell 指令 → 我做的事 ⭐ 新增
+1. 在對話中直接給指令 (使用者立即可貼)
+2. **同時** 寫 `docs/runbook/v<patch>_<YYYYMMDD>_<HHMM>_<topic>.md`
+3. 更新 `docs/runbook/README.md` 索引
+4. git commit + push
+5. 回應使用者時, 給對話指令 + GitHub URL
+
+判斷「要不要寫 runbook」: 下次同樣場景再做一次, 還需要這串指令嗎? 是 → 寫。
+
 ---
 
 ## 文件導航 (給將來接手者)
@@ -151,10 +209,12 @@ bundle 應該:
 1. [README.md](../../README.md) — 整體 5 分鐘
 2. [架構圖](../architecture-v2.html) — 視覺化 (用瀏覽器開)
 3. [本檔 SKILL](skill_sf_workflow.md) — 規範 5 分鐘
-4. [issues_log.md](issues_log.md) — 知道踩過什麼坑
-5. [dev_journal.md](dev_journal.md) — 時間軸
-6. [patches/README.md](../../patches/README.md) — 修補規範
-7. [docs/deployment_sop.md](../deployment_sop.md) — 部署 SOP
+4. [LINUX_USER_GUIDE.md](../LINUX_USER_GUIDE.md) — Linux 用戶速查 (Linux ↔ Windows 對照)
+5. [issues_log.md](issues_log.md) — 知道踩過什麼坑
+6. [dev_journal.md](dev_journal.md) — 時間軸
+7. [patches/README.md](../../patches/README.md) — 修補規範
+8. [runbook/README.md](../runbook/README.md) — 操作 SOP 歷史紀錄 ⭐
+9. [docs/deployment_sop.md](../deployment_sop.md) — 部署 SOP
 
 讀完約 30-45 分鐘, 可上手。
 
@@ -182,3 +242,4 @@ bundle 應該:
 - ❌ 用 UTF-8 no BOM 寫 .ps1
 - ❌ 把使用者 IP / 帳號寫進 public repo
 - ❌ 一個 bug 重複踩 (應該已記 issue, 直接套既有解)
+- ❌ **給使用者跑的指令只在對話裡, 沒進 `docs/runbook/`** (鐵律 9)
