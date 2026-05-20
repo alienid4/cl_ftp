@@ -5,20 +5,27 @@
 
 ---
 
+## 雙分支策略 (v1.x 與 v2.x 並存)
+
+| 分支 | 平台 | 狀態 | 目錄 |
+|---|---|---|---|
+| **v1.x.x** | Windows Server 2022 | maintenance | `deploy/`, `scripts/*.ps1`, `config/sshd_config` |
+| **v2.x.x** ⭐ | RHEL 8/9 | 主開發 | `deploy-rhel/`, `config/sshd_config_linux`, `config/nginx/`, `config/sssd/`, `config/samba/` |
+
+共用: `portal/` (Flask app), 規畫文件, 主管圖, 整體規範。
+
+---
+
 ## 版本號規則
 
-- **主版**: `v1.0.0` (對應 GitHub Release tag)
-- **Patch 版**: `v1.0.0.X` (X 從 1 開始遞增)
+| 版本 | 何時用 | 範例 |
+|---|---|---|
+| `v1.0.0.X` / `v2.0.0.X` | bug fix patch (4 段) | v1.0.0.1, v2.0.0.1 |
+| `v1.X.0` / `v2.X.0` | 中型改版 (新功能, 3 段) | v2.1.0 (加 PAM) |
+| `v2.0.0` (主版) | 大型改版 (架構變更, 不向下相容) | v1.x → v2.x (Windows → RHEL) |
 
-| 版本 | 何時用 |
-|---|---|
-| `v1.0.0.1` | 第一個 patch (例如修路徑、改編碼) |
-| `v1.0.0.2` | 第二個 patch |
-| `v1.0.0.N` | 第 N 個 |
-| `v1.1.0` | 中型改版 (新增功能, 例如新模組) |
-| `v2.0.0` | 大型改版 (架構變更, 不向下相容) |
-
-→ Patch 用 4 段版號, 主功能改版用 3 段。
+→ 4 段為 patch, 3 段為主功能改版。
+→ 主版號變 = 不向下相容 (例: 換 OS、換 DB 引擎、換認證模型)。
 
 ---
 
@@ -102,7 +109,9 @@ Invoke-WebRequest https://raw.githubusercontent.com/alienid4/cl_ftp/main/patches
 | **v1.0.0.7** | 2026-05-20 | Round 2 修正 (PS 5.1 相容 + portable OpenSSH 雙軌偵測 + 門檻調整 + health_check null/type) | 9b1674a |
 | **v1.0.0.8** | 2026-05-20 | Round 3 修正 (sshd_config internal-sftp + 自動建 banner.txt) | d96d51e |
 | **v1.0.0.9** | 2026-05-20 | Round 4 修正 (_portal 路徑統一 + 7 個 deploy 腳本 bug) | b738cb0 |
-| **v1.0.0.10** | 2026-05-20 | Round 5 修正 (sshd_config DenyUsers + 04 BatchMode + 09 wheels 離線) ⭐ 必裝 | (待 commit) |
+| **v1.0.0.10** | 2026-05-20 | Round 5 修正 (sshd_config DenyUsers + 04 BatchMode + 09 wheels 離線) | 3ef9db4 |
+| **v1.x 結束** | 2026-05-20 | Windows Server 分支 maintenance, 之後改 RHEL | — |
+| **v2.0.0** ⭐ | 2026-05-20 | **平台大改版: Windows Server → RHEL 8/9** (主架構分支) | (待 commit) |
 
 ---
 

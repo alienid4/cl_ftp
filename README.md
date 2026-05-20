@@ -1,7 +1,20 @@
-﻿# SF 中繼檔案交換主機 (Windows Server 版本)
+﻿# SF 中繼檔案交換主機
 
 > **檔案中繼平台**: SFTP 上傳 + ANY 制簽核 + SMB / Portal ZIP 下載 + 全程稽核留痕
 > 對齊主管圖 + Z 方案增值 (OA 端 USER 取檔 / 業務簽核 / Portal 集中視覺化)
+
+---
+
+## 雙平台支援 (v1.x = Windows, v2.x = RHEL)
+
+| 主版本 | 平台 | 部署目錄 | 狀態 |
+|---|---|---|---|
+| **v1.x.x** | Windows Server 2022 | `deploy/`, `scripts/*.ps1` | maintenance |
+| **v2.x.x** ⭐ | RHEL 8/9 | `deploy-rhel/`, `config/*linux*` | **主開發** |
+
+新環境**建議用 v2.x (RHEL)** — Linux 用戶速度快 10 倍, 同一份 Flask Portal 程式碼跨平台。
+
+詳見: [v1 → v2 升級決策](docs/runbook/eval_20260520_0900_rhel_alternative.md)
 
 ---
 
@@ -18,7 +31,21 @@
 
 ---
 
-## 快速開始
+## 快速開始 (v2.x / RHEL 推薦) ⭐
+
+```bash
+sudo dnf install -y git
+cd /opt
+sudo git clone https://github.com/alienid4/cl_ftp sf
+cd sf
+sudo ./deploy-rhel/install_all.sh
+```
+
+完成後自動顯示訪問網址。詳見 [v2.0.0 部署 SOP](docs/runbook/v2.0.0_20260520_1100_first_deploy.md)。
+
+---
+
+## 快速開始 (v1.x / Windows, maintenance)
 
 ### 1. 外網工作站 — 打包離線 bundle (~600 MB)
 ```powershell
