@@ -27,7 +27,8 @@ v<patch-版本>_<YYYYMMDD>_<HHMM>_<topic>.md
 
 | 日期 | 類型 | 主題 | URL |
 |---|---|---|---|
-| 2026-05-20 11:00 | v2.0.0 | **RHEL 首次部署 (一鍵 install_all.sh)** ⭐ 主架構 | [v2.0.0_20260520_1100_first_deploy.md](v2.0.0_20260520_1100_first_deploy.md) |
+| 2026-05-20 12:00 | v2.0.0.1 | **PoC 單帳號 u01t / 密碼 1qaz@WSX / 無 HTTPS** ⭐ 給你的 | [v2.0.0.1_20260520_1200_single_account_poc.md](v2.0.0.1_20260520_1200_single_account_poc.md) |
+| 2026-05-20 11:00 | v2.0.0 | RHEL 首次部署 (主架構) | [v2.0.0_20260520_1100_first_deploy.md](v2.0.0_20260520_1100_first_deploy.md) |
 | 2026-05-20 09:00 | eval | 改用 RHEL 取代 Windows Server 2022 (評估) | [eval_20260520_0900_rhel_alternative.md](eval_20260520_0900_rhel_alternative.md) |
 | 2026-05-20 08:30 | v1.0.0.10 | Linux 用戶 PoC 部署 (C:\, 無 HTTPS) | [v1.0.0.10_20260520_0830_linux_user_poc.md](v1.0.0.10_20260520_0830_linux_user_poc.md) |
 

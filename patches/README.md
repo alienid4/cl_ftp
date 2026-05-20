@@ -111,7 +111,8 @@ Invoke-WebRequest https://raw.githubusercontent.com/alienid4/cl_ftp/main/patches
 | **v1.0.0.9** | 2026-05-20 | Round 4 修正 (_portal 路徑統一 + 7 個 deploy 腳本 bug) | b738cb0 |
 | **v1.0.0.10** | 2026-05-20 | Round 5 修正 (sshd_config DenyUsers + 04 BatchMode + 09 wheels 離線) | 3ef9db4 |
 | **v1.x 結束** | 2026-05-20 | Windows Server 分支 maintenance, 之後改 RHEL | — |
-| **v2.0.0** ⭐ | 2026-05-20 | **平台大改版: Windows Server → RHEL 8/9** (主架構分支) | (待 commit) |
+| **v2.0.0** | 2026-05-20 | 平台大改版: Windows Server → RHEL 8/9 | d498a23 |
+| **v2.0.0.1** ⭐ | 2026-05-20 | 單帳號 PoC (u01t) + 非互動 + 對齊 u0X 主管圖 + 純 HTTP | (待 commit) |
 
 ---
 
