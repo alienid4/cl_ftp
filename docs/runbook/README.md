@@ -25,9 +25,19 @@ v<patch-版本>_<YYYYMMDD>_<HHMM>_<topic>.md
 
 ## 索引 (最新在上)
 
-| 日期 | 版本 | 主題 | URL |
+| 日期 | 類型 | 主題 | URL |
 |---|---|---|---|
+| 2026-05-20 09:00 | eval | **改用 RHEL 取代 Windows Server 2022 (評估)** | [eval_20260520_0900_rhel_alternative.md](eval_20260520_0900_rhel_alternative.md) |
 | 2026-05-20 08:30 | v1.0.0.10 | Linux 用戶 PoC 部署 (C:\, 無 HTTPS) | [v1.0.0.10_20260520_0830_linux_user_poc.md](v1.0.0.10_20260520_0830_linux_user_poc.md) |
+
+## 命名 type 種類
+
+| Prefix | 用途 | 範例 |
+|---|---|---|
+| `v<patch-版本>` | 對應特定 patch 的部署 SOP | `v1.0.0.10_20260520_0830_xxx.md` |
+| `eval` | 架構評估 / 決策記錄 | `eval_20260520_0900_rhel_alternative.md` |
+| `decision` | 重大決策的紀錄 (跟 eval 類似但更短) | `decision_20260521_use_postgres.md` |
+| `incident` | 故障處理紀錄 | `incident_20260601_1830_db_outage.md` |
 
 ## 對應其他文件
 
