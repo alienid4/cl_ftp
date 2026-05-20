@@ -24,7 +24,13 @@ step()  { echo ""; echo -e "${CYAN}=== $* ===${NC}"; }
 ok()    { echo -e "${GREEN}[ok]${NC} $*"; }
 warn()  { echo -e "${YELLOW}[warn]${NC} $*"; }
 
-# 0. 前置檢查
+# 0. 在 cd 之前先把腳本 + repo 路徑算成 absolute (避免 cwd 變動後找不到)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOCAL_REPO="$(cd "$SCRIPT_DIR/.." && pwd)"
+echo "[init] SCRIPT_DIR=$SCRIPT_DIR"
+echo "[init] LOCAL_REPO=$LOCAL_REPO"
+
+# 前置檢查
 [[ $EUID -eq 0 ]] || warn "建議用 root (root 跑 dnf download 比較順)"
 
 if ! grep -qE 'release [89]' /etc/redhat-release 2>/dev/null; then
@@ -151,10 +157,7 @@ ok "抓到 $WHL_COUNT 個 wheels, 共 $WHL_SIZE"
 step "3. 拷 repo (從本地 OR 從 GitHub clone)"
 cd "$OUTPUT_DIR/repo"
 
-# 偵測是否在 repo 目錄內跑 (CI / 本地 dev)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOCAL_REPO="$(cd "$SCRIPT_DIR/.." && pwd)"
-
+# LOCAL_REPO 在最開頭已算好 (absolute path)
 if [[ -f "$LOCAL_REPO/portal/wsgi.py" ]]; then
     echo "[info] 從本地 repo 拷 ($LOCAL_REPO)"
     # 排除 .git, release-zip, output, .github 等
@@ -165,7 +168,8 @@ if [[ -f "$LOCAL_REPO/portal/wsgi.py" ]]; then
         --exclude='node_modules' \
         --exclude='__pycache__' \
         "$LOCAL_REPO/" .
-    REPO_VER=$(cd "$LOCAL_REPO" && git describe --tags --always 2>/dev/null || echo local)
+    # git describe 用 absolute path, 不靠 cd
+    REPO_VER=$(git -C "$LOCAL_REPO" describe --tags --always 2>/dev/null || echo "local")
 else
     echo "[info] 本地沒 repo, 從 GitHub clone"
     git clone --depth=1 https://github.com/alienid4/cl_ftp .
