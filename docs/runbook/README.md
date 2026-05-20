@@ -27,7 +27,8 @@ v<patch-版本>_<YYYYMMDD>_<HHMM>_<topic>.md
 
 | 日期 | 類型 | 主題 | URL |
 |---|---|---|---|
-| 2026-05-20 09:00 | eval | **改用 RHEL 取代 Windows Server 2022 (評估)** | [eval_20260520_0900_rhel_alternative.md](eval_20260520_0900_rhel_alternative.md) |
+| 2026-05-20 11:00 | rhel-v1 | **RHEL 首次部署 (一鍵 install_all.sh)** ⭐ | [rhel-v1_20260520_1100_first_deploy.md](rhel-v1_20260520_1100_first_deploy.md) |
+| 2026-05-20 09:00 | eval | 改用 RHEL 取代 Windows Server 2022 (評估) | [eval_20260520_0900_rhel_alternative.md](eval_20260520_0900_rhel_alternative.md) |
 | 2026-05-20 08:30 | v1.0.0.10 | Linux 用戶 PoC 部署 (C:\, 無 HTTPS) | [v1.0.0.10_20260520_0830_linux_user_poc.md](v1.0.0.10_20260520_0830_linux_user_poc.md) |
 
 ## 命名 type 種類

@@ -1,0 +1,69 @@
+# SF File Exchange Server — OpenSSH sshd_config (Linux 版)
+# 對齊規畫: u01~u0N 業務代號帳號 chroot 到部門 inbound 目錄
+
+# === 監聽 ===
+Port 22
+AddressFamily inet
+ListenAddress 0.0.0.0
+
+# === Protocol ===
+Protocol 2
+
+# === Host Key ===
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+
+# === Auth ===
+PermitRootLogin no
+PasswordAuthentication yes
+PubkeyAuthentication yes
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+KerberosAuthentication no
+GSSAPIAuthentication yes
+UsePAM yes
+
+MaxAuthTries 3
+MaxSessions 10
+LoginGraceTime 30
+ClientAliveInterval 60
+ClientAliveCountMax 3
+
+# === 加密 (對齊 hardening, 停用弱演算法) ===
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
+HostKeyAlgorithms ssh-ed25519,rsa-sha2-512,rsa-sha2-256
+
+# === SFTP Subsystem ===
+Subsystem sftp internal-sftp -l INFO
+
+# === Banner ===
+Banner /etc/ssh/banner.txt
+
+# === Logging ===
+SyslogFacility AUTH
+LogLevel INFO
+
+# === SFTP 業務代號帳號 chroot ===
+# 群組 sftp_users 內所有帳號: chroot 到 /data/exchange/<dept>/inbound
+# Linux 對應規畫的「u01 業務代號 = sftp_hr 部門共用帳號」
+Match Group sftp_users
+    ChrootDirectory /data/exchange/%u
+    ForceCommand internal-sftp -d /inbound
+    AllowTcpForwarding no
+    X11Forwarding no
+    PermitTunnel no
+    AllowAgentForwarding no
+    PasswordAuthentication yes
+    PubkeyAuthentication yes
+
+# === Disable 不需要的功能 ===
+UseDNS no
+GatewayPorts no
+PermitUserEnvironment no
+AllowAgentForwarding no
+AllowTcpForwarding no
+X11Forwarding no
+PrintLastLog yes
+TCPKeepAlive yes
