@@ -190,7 +190,71 @@ v2.0 RHEL bundle: 打 .tar.gz 帶 .rpm → file conflict 連環坑 (10 個 patch
 
 ---
 
-## 鐵律 9: 每次給使用者跑的「PowerShell 指令套組」進 `docs/runbook/`
+## 鐵律 9: 給使用者跑的指令**只給 GitHub URL, 不在 chat inline**
+
+### 核心原則 (使用者公司限制)
+
+**公司 DLP 可能擋從 chat 複製內容到公司 PC**, 使用者只能從 **GitHub 公開 URL** 取得指令。
+
+→ chat 訊息 **不寫具體指令**, 只寫:
+1. **「跑這個 URL」+ 一條 URL**
+2. 簡短解釋這個 script 做什麼
+
+### 反例 (我不要做的)
+
+```
+❌ chat 訊息:
+"跑這 5 行:
+   sudo dnf install -y nginx postgresql ...
+   git clone https://...
+   cd /opt/sf
+   sudo chmod +x ...
+   sudo ./install_all.sh
+"
+```
+
+→ 使用者無法複製 (公司擋)。
+
+### 正例 (應該做的)
+
+```
+✅ chat 訊息:
+"跑這個:
+   https://github.com/alienid4/cl_ftp/raw/main/deploy-rhel/install_online.sh
+
+它會自動 dnf install + clone + deploy。"
+```
+
+→ 使用者開 URL → 看 raw 內容 → 從 GitHub 複製。
+
+### 對應流程
+
+```
+1. 我想給使用者跑指令
+2. 寫成 .sh / .ps1 script
+3. commit + push 到 GitHub
+4. chat 只給 URL
+5. 同步寫 runbook 記錄 (鐵律 9 原本要求)
+```
+
+### 例外 (極少數)
+
+- 純解釋性概念 (「這個指令對應 Linux 的 X」) → OK
+- 1 行純查詢 (`systemctl status sshd`) → OK
+- 任何 > 3 行 + 含敏感操作 (sudo / install / 寫檔) → **必須走 GitHub**
+
+### 命名規範
+
+| 用途 | 位置 | URL 範例 |
+|---|---|---|
+| 一鍵 installer | `deploy-rhel/install_*.sh` | `https://github.com/.../deploy-rhel/install_online.sh` |
+| Patch apply | `patches/v.../runpatch_v.sh` | `https://github.com/.../patches/v2.1.0/runpatch_v2.1.0.sh` |
+| 最新版指向 | `release-zip/latest-*.sh` | `https://github.com/.../release-zip/latest-install.sh` |
+| 一次性 helper | `scripts/<topic>.sh` | `https://github.com/.../scripts/diagnose_portal.sh` |
+
+---
+
+## 鐵律 9-OLD: 每次給使用者跑的「PowerShell 指令套組」進 `docs/runbook/`
 
 使用者問「我下一步做什麼」、「怎麼跑」、「貼什麼指令」 →
 我給的指令**不能只在對話裡丟過去就算**, 必須:
