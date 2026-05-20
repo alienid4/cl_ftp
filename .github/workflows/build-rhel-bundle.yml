@@ -18,6 +18,9 @@ on:
           - '8'
           - '9'
 
+permissions:
+  contents: write   # 允許 create release + upload asset (修 v2.0.0.4 'Too many retries')
+
 jobs:
   build:
     runs-on: ubuntu-latest
