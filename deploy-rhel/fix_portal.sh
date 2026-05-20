@@ -1,0 +1,225 @@
+#!/bin/bash
+#
+# fix_portal.sh — 從零重建 Portal (用公司 dnf mirror, 不用 pip)
+#
+# 對應 diagnose.sh 找到的 5 個問題:
+#   - sf-portal.service 不存在
+#   - Port 5000 沒監聽
+#   - /opt/portal/app/wsgi.py 不存在
+#   - /opt/portal/venv 不存在
+#   - firewall 沒放行 80/5000
+#
+# 用法:
+#   curl -fsSL https://github.com/alienid4/cl_ftp/raw/main/deploy-rhel/fix_portal.sh | sudo bash
+#
+
+set -euo pipefail
+
+GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
+BOLD='\033[1m'
+step()  { echo ""; echo -e "${CYAN}=== $* ===${NC}"; }
+ok()    { echo -e "${GREEN}[ok]${NC} $*"; }
+warn()  { echo -e "${YELLOW}[warn]${NC} $*"; }
+fail()  { echo -e "${RED}[FAIL]${NC} $*"; exit 1; }
+
+[[ $EUID -eq 0 ]] || fail "請 sudo: curl ... | sudo bash"
+
+DB_PASS="${SF_DB_PASS:-changeme_$(openssl rand -hex 4)}"
+
+echo ""
+echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BOLD}${CYAN}║   fix_portal.sh — 重建 SF Portal service                     ║${NC}"
+echo -e "${BOLD}${CYAN}║   (用 dnf 裝 python3-*, 不用 pip / venv)                      ║${NC}"
+echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
+
+# === Step 1: dnf install Python 套件 (從公司 mirror) ===
+step "Step 1: 裝 Python 套件 (用 dnf, 不用 pip)"
+
+# Core packages from RHEL repos
+dnf install -y \
+    python3 python3-pip \
+    python3-flask python3-gunicorn python3-psycopg2 \
+    python3-cryptography python3-requests 2>&1 | tail -5
+
+# 確認核心模組可 import
+for mod in flask gunicorn psycopg2 cryptography; do
+    if /usr/bin/python3 -c "import $mod" 2>/dev/null; then
+        ok "python3 -c 'import $mod' OK"
+    else
+        warn "$mod 沒裝, 嘗試從 EPEL / pip 補..."
+        dnf install -y "python3-${mod}" 2>/dev/null || \
+            /usr/bin/pip3 install "$mod" 2>&1 | tail -3 || \
+            warn "$mod 仍裝不起來"
+    fi
+done
+
+# Optional packages (容忍 fail)
+for pkg in python3-flask-login python3-flask-session python3-ldap python3-pyjwt python3-werkzeug; do
+    dnf install -y "$pkg" 2>/dev/null || warn "$pkg 沒裝 (optional)"
+done
+
+# === Step 2: 拷 Portal 程式碼 ===
+step "Step 2: 拷 Portal source 到 /opt/portal/app"
+
+mkdir -p /opt/portal/{app,logs,scripts}
+
+if [[ -d /opt/sf/portal ]]; then
+    cp -r /opt/sf/portal/* /opt/portal/app/
+    ok "拷貝 /opt/sf/portal/* -> /opt/portal/app/"
+else
+    fail "/opt/sf/portal 不存在, 請先跑 install_online.sh 拉 repo"
+fi
+
+# 用 nginx user 跑 (跟 nginx 同 uid 較簡單; 也可改 sf-portal)
+if id -u nginx &>/dev/null; then
+    RUN_USER="nginx"
+elif id -u portal &>/dev/null; then
+    RUN_USER="portal"
+else
+    useradd -r -s /sbin/nologin -d /opt/portal portal
+    RUN_USER="portal"
+fi
+ok "RUN_USER = $RUN_USER"
+
+chown -R "$RUN_USER:$RUN_USER" /opt/portal
+
+# === Step 3: 寫 appsettings.json ===
+step "Step 3: 寫 Portal appsettings.json"
+
+if [[ ! -f /opt/portal/app/appsettings.json ]]; then
+    # 從 PostgreSQL 取或建 portal user
+    sudo -u postgres psql <<EOF 2>&1 | tail -5
+DO \$\$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'file_exchange_audit') THEN
+        CREATE DATABASE file_exchange_audit;
+    END IF;
+END \$\$;
+
+DO \$\$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'portal') THEN
+        CREATE USER portal WITH PASSWORD '$DB_PASS';
+    ELSE
+        ALTER USER portal WITH PASSWORD '$DB_PASS';
+    END IF;
+END \$\$;
+
+GRANT ALL PRIVILEGES ON DATABASE file_exchange_audit TO portal;
+EOF
+
+    cat > /opt/portal/app/appsettings.json <<EOF
+{
+    "DATABASE_URL": "postgresql://portal:$DB_PASS@127.0.0.1:5432/file_exchange_audit",
+    "PORTAL_PORT": 5000,
+    "DATA_ROOT": "/data/exchange",
+    "LOG_DIR": "/opt/portal/logs",
+    "AD_DOMAIN": "corp.local",
+    "SECRET_KEY": "$(openssl rand -hex 32)"
+}
+EOF
+    chmod 640 /opt/portal/app/appsettings.json
+    chown "$RUN_USER:$RUN_USER" /opt/portal/app/appsettings.json
+    ok "appsettings.json 寫入"
+
+    # 套 schema 如果有
+    if [[ -f /opt/sf/sql/01_create_db_postgres.sql ]]; then
+        sudo -u postgres psql -d file_exchange_audit < /opt/sf/sql/01_create_db_postgres.sql 2>&1 | tail -3 || warn "schema 套用部分失敗"
+        ok "Schema 套用"
+    fi
+else
+    ok "appsettings.json 已存在, skip"
+fi
+
+# 修 pg_hba.conf 允許 portal 連
+PG_HBA=$(find /var/lib/pgsql /etc/postgresql -name pg_hba.conf 2>/dev/null | head -1)
+if [[ -n "$PG_HBA" ]] && ! grep -q "host.*file_exchange_audit.*portal.*127.0.0.1" "$PG_HBA"; then
+    echo "host    file_exchange_audit    portal    127.0.0.1/32    md5" >> "$PG_HBA"
+    systemctl reload postgresql
+    ok "pg_hba.conf 允許 portal 連 (127.0.0.1)"
+fi
+
+# === Step 4: 寫 systemd unit ===
+step "Step 4: 寫 systemd unit /etc/systemd/system/sf-portal.service"
+
+cat > /etc/systemd/system/sf-portal.service <<EOF
+[Unit]
+Description=SF File Exchange Portal (Flask + gunicorn)
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=$RUN_USER
+Group=$RUN_USER
+WorkingDirectory=/opt/portal/app
+Environment="PYTHONPATH=/opt/portal/app"
+ExecStart=/usr/bin/gunicorn --workers 3 --bind 127.0.0.1:5000 --access-logfile /opt/portal/logs/access.log --error-logfile /opt/portal/logs/error.log wsgi:app
+Restart=always
+RestartSec=10
+
+StandardOutput=append:/opt/portal/logs/portal-stdout.log
+StandardError=append:/opt/portal/logs/portal-stderr.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+ok "sf-portal.service 寫入"
+
+systemctl daemon-reload
+
+# === Step 5: 防火牆 ===
+step "Step 5: 防火牆放行 80 (5000 限本機, 不對外)"
+
+if systemctl is-active firewalld &>/dev/null; then
+    firewall-cmd --permanent --add-service=http 2>&1 | tail -2
+    firewall-cmd --reload 2>&1 | tail -2
+    ok "防火牆放行 http (80)"
+fi
+
+# === Step 6: 啟動 + 等 + 驗證 ===
+step "Step 6: 啟動 sf-portal"
+
+systemctl enable sf-portal 2>&1 | tail -2
+systemctl restart sf-portal
+
+echo "等 sf-portal 起來 (最多 30 秒)..."
+PORTAL_OK=false
+for i in $(seq 1 15); do
+    if systemctl is-active sf-portal &>/dev/null; then
+        code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 http://localhost:5000/ 2>/dev/null || echo 000)
+        if [[ "$code" =~ ^(200|302|401|403)$ ]]; then
+            PORTAL_OK=true
+            ok "Portal 起來 (HTTP $code)"
+            break
+        fi
+    fi
+    sleep 2
+done
+
+# === 結果 ===
+echo ""
+if $PORTAL_OK; then
+    MAIN_IP=$(ip -4 addr | grep -E 'inet ' | grep -v '127.0.0.1' | head -1 | awk '{print $2}' | cut -d/ -f1)
+    echo -e "${BOLD}${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BOLD}${GREEN}║   ✅ Portal 已修好, 可給 USER 測試                            ║${NC}"
+    echo -e "${BOLD}${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo "  Portal: http://$MAIN_IP/        (nginx 反代 80 → 5000)"
+    echo "  Direct: http://$MAIN_IP:5000/   (本機 debug)"
+else
+    echo -e "${RED}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║   ❌ Portal 仍沒起來, 看 log                                  ║${NC}"
+    echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo "=== systemctl status sf-portal ==="
+    systemctl status sf-portal --no-pager -l 2>&1 | tail -20
+    echo ""
+    echo "=== journalctl -u sf-portal (最後 30 行) ==="
+    journalctl -u sf-portal -n 30 --no-pager 2>&1
+    echo ""
+    echo "=== /opt/portal/logs/portal-stderr.log ==="
+    tail -30 /opt/portal/logs/portal-stderr.log 2>&1
+    echo ""
+    echo "→ 看上面錯誤訊息, 截圖貼給 Claude 找下一步"
+    exit 1
+fi
