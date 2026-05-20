@@ -27,7 +27,8 @@ v<patch-版本>_<YYYYMMDD>_<HHMM>_<topic>.md
 
 | 日期 | 類型 | 主題 | URL |
 |---|---|---|---|
-| 2026-05-20 13:30 | v2.0.0.2 | **離線打包 + 內網 SF 主機部署** ⭐ 給你的 | [v2.0.0.2_20260520_1330_offline_bundle.md](v2.0.0.2_20260520_1330_offline_bundle.md) |
+| 2026-05-20 15:00 | v2.0.0.3 | **從 Windows PC 打包 (Docker + Rocky 9)** ⭐ 給你的 | [v2.0.0.3_20260520_1500_windows_pc_build.md](v2.0.0.3_20260520_1500_windows_pc_build.md) |
+| 2026-05-20 13:30 | v2.0.0.2 | 離線打包 + 內網 SF 主機部署 (RHEL build) | [v2.0.0.2_20260520_1330_offline_bundle.md](v2.0.0.2_20260520_1330_offline_bundle.md) |
 | 2026-05-20 12:00 | v2.0.0.1 | PoC 單帳號 u01t / 密碼 1qaz@WSX / 無 HTTPS | [v2.0.0.1_20260520_1200_single_account_poc.md](v2.0.0.1_20260520_1200_single_account_poc.md) |
 | 2026-05-20 11:00 | v2.0.0 | RHEL 首次部署 (主架構) | [v2.0.0_20260520_1100_first_deploy.md](v2.0.0_20260520_1100_first_deploy.md) |
 | 2026-05-20 09:00 | eval | 改用 RHEL 取代 Windows Server 2022 (評估) | [eval_20260520_0900_rhel_alternative.md](eval_20260520_0900_rhel_alternative.md) |

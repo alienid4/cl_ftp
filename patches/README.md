@@ -113,7 +113,8 @@ Invoke-WebRequest https://raw.githubusercontent.com/alienid4/cl_ftp/main/patches
 | **v1.x 結束** | 2026-05-20 | Windows Server 分支 maintenance, 之後改 RHEL | — |
 | **v2.0.0** | 2026-05-20 | 平台大改版: Windows Server → RHEL 8/9 | d498a23 |
 | **v2.0.0.1** | 2026-05-20 | 單帳號 PoC (u01t) + 非互動 + 對齊 u0X 主管圖 + 純 HTTP | b8d4a0f |
-| **v2.0.0.2** ⭐ | 2026-05-20 | 離線安裝包 (RHEL build script + offline installer) | (待 commit) |
+| **v2.0.0.2** | 2026-05-20 | 離線安裝包 (RHEL build script + offline installer) | 2d14755 |
+| **v2.0.0.3** ⭐ | 2026-05-20 | Windows PC 打包工具 (Docker + Rocky 9, 給只有 Windows 的人) | (待 commit) |
 
 ---
 
