@@ -25,7 +25,7 @@
 # 各 step 自己用 || warn 處理錯誤
 set -uo pipefail
 
-VERSION="fix_portal v2.2.4 (2026-05-21)"
+VERSION="fix_portal v2.2.5 (2026-05-21)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -326,13 +326,26 @@ fi
 # === Step 4: 寫 systemd unit ===
 step "Step 4: 寫 systemd unit /etc/systemd/system/sf-portal.service"
 
-# 判斷: 有 gunicorn 用 gunicorn (production), 沒有就用 Flask 內建
-if command -v gunicorn-3 &>/dev/null || /usr/bin/python3 -c "import gunicorn" 2>/dev/null; then
-    EXEC_LINE='ExecStart=/usr/bin/gunicorn-3 --workers 3 --bind 127.0.0.1:5000 --access-logfile /opt/portal/logs/access.log --error-logfile /opt/portal/logs/error.log wsgi:app'
-    SERVER_DESC="gunicorn"
+# 判斷: 動態抓 gunicorn 真實 binary 路徑 (EPEL 21.2.0 是 /usr/bin/gunicorn, 不是 gunicorn-3)
+GUNICORN_BIN=""
+for candidate in /usr/bin/gunicorn /usr/bin/gunicorn-3 /usr/local/bin/gunicorn; do
+    if [[ -x "$candidate" ]]; then
+        GUNICORN_BIN="$candidate"
+        break
+    fi
+done
+
+# 也試 PATH 上的
+if [[ -z "$GUNICORN_BIN" ]]; then
+    GUNICORN_BIN=$(command -v gunicorn 2>/dev/null || command -v gunicorn-3 2>/dev/null || echo "")
+fi
+
+if [[ -n "$GUNICORN_BIN" ]] && /usr/bin/python3 -c "import gunicorn" 2>/dev/null; then
+    EXEC_LINE="ExecStart=$GUNICORN_BIN --workers 3 --bind 127.0.0.1:5000 --access-logfile /opt/portal/logs/access.log --error-logfile /opt/portal/logs/error.log wsgi:app"
+    SERVER_DESC="gunicorn ($GUNICORN_BIN)"
 else
     EXEC_LINE='ExecStart=/usr/bin/python3 -m flask run --host=127.0.0.1 --port=5000 --no-debugger --no-reload'
-    SERVER_DESC="Flask built-in werkzeug"
+    SERVER_DESC="Flask built-in werkzeug (找不到 gunicorn binary)"
 fi
 ok "WSGI server: $SERVER_DESC"
 
