@@ -1,10 +1,10 @@
 # release-zip 版本對照
 
-## 當前 (latest = v2.2.0)
+## 當前 (latest = v2.2.1)
 
 | 檔名 (versioned) | latest 別名 | 用途 |
 |---|---|---|
-| `fix-portal-v2.2.0.sh` | `latest-fix-portal.sh` | 重建 Portal (SF 離線, EPEL tar 本地讀) |
+| `fix-portal-v2.2.1.sh` ⭐ | `latest-fix-portal.sh` | 重建 Portal (支援散檔 .rpm + tar) |
 | `diagnose-v2.2.0.sh` | `latest-diagnose.sh` | 9 項診斷 (sshd/nginx/portal/...) |
 | `net-check-v2.2.0.sh` | `latest-net-check.sh` | 測 SF 對外連通性 |
 | `repo-check-v2.2.0.sh` | `latest-repo-check.sh` | 確認 dnf repo + python3-flask 來源 |
@@ -38,6 +38,12 @@
 4. 更新本 VERSIONS.md
 
 ## 版本歷史
+
+### v2.2.1 (2026-05-21)
+- fix_portal.sh 支援 3 模式找 EPEL Python:
+  1. 散檔 *.rpm (USER 直接 scp 7 個 RPM 到 /tmp/ftp-lab) ⭐
+  2. 預打 tar (PC 跑 pack_local_rpms.ps1)
+  3. curl github (有外網 fallback)
 
 ### v2.2.0 (2026-05-21)
 - 加 `/tmp/ftp-lab` 為主要 USER 軟體目錄

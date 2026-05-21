@@ -23,7 +23,7 @@
 
 set -euo pipefail
 
-VERSION="fix_portal v2.2.0 (2026-05-21)"
+VERSION="fix_portal v2.2.1 (2026-05-21)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -63,73 +63,98 @@ for mod in psycopg2 cryptography; do
     fi
 done
 
-# === Step 1b: EPEL Python RPM tar 安裝 (公司禁 EPEL + SF 不能上網的解法) ===
-step "Step 1b: 找 EPEL Python RPM tar"
+# === Step 1b: 找 EPEL Python RPM (3 種模式: 散檔 / tar / curl github) ===
+step "Step 1b: 找 EPEL Python RPM"
 
 EPEL_DIR="/tmp/sf-epel-pyrpms"
-mkdir -p "$EPEL_DIR"
-cd "$EPEL_DIR"
+mkdir -p "$EPEL_DIR/rpms"
 
-# 優先順序: 本地檔 → curl github
-# (SF 主機不能上網的話, USER 要先在 PC 抓 tar 拷到下列任一位置)
-EPEL_TAR_CANDIDATES=(
-    "/tmp/ftp-lab/sf-epel-pyrpms.tar.gz"          # 推薦位置 (USER 軟體目錄)
-    "/tmp/ftp-lab/release-zip/sf-epel-pyrpms.tar.gz"
-    "/opt/sf/release-zip/sf-epel-pyrpms.tar.gz"   # git clone 過就有
-    "/opt/sf/sf-epel-pyrpms.tar.gz"
-    "/tmp/sf-epel-pyrpms.tar.gz"
-    "/root/sf-epel-pyrpms.tar.gz"
+# 模式 1: 直接找散檔 *.rpm (USER 把 7 個 RPM 直接 scp 到資料夾)
+RPM_DIR_CANDIDATES=(
+    "/tmp/ftp-lab"                 # USER 軟體目錄 (推薦)
+    "/tmp/ftp-lab/rpms"
+    "/tmp/ftp-lab/epel-rpms"
+    "/tmp/epel-rpms"
+    "/opt/sf/epel-rpms"
 )
 
-EPEL_TAR_FOUND=""
-for p in "${EPEL_TAR_CANDIDATES[@]}"; do
-    if [[ -f "$p" ]]; then
-        EPEL_TAR_FOUND="$p"
-        cp "$p" "$EPEL_DIR/sf-epel-pyrpms.tar.gz"
-        ok "找到本地 tar: $p"
+EPEL_RPM_DIR=""
+for d in "${RPM_DIR_CANDIDATES[@]}"; do
+    if [[ -d "$d" ]] && ls "$d"/python3-flask-*.rpm &>/dev/null; then
+        EPEL_RPM_DIR="$d"
+        ok "找到散檔 RPM: $d/python3-*.rpm"
+        cp "$d"/python3-*.rpm "$EPEL_DIR/rpms/" 2>/dev/null || true
         break
     fi
 done
 
-# 沒找到本地, 試 curl github (SF 有外網才會成功)
-if [[ -z "$EPEL_TAR_FOUND" ]]; then
+# 模式 2: 找 tar (PC 跑 pack_local_rpms.ps1 打的)
+if [[ -z "$EPEL_RPM_DIR" ]]; then
+    EPEL_TAR_CANDIDATES=(
+        "/tmp/ftp-lab/sf-epel-pyrpms.tar.gz"
+        "/tmp/ftp-lab/release-zip/sf-epel-pyrpms.tar.gz"
+        "/opt/sf/release-zip/sf-epel-pyrpms.tar.gz"
+        "/opt/sf/sf-epel-pyrpms.tar.gz"
+        "/tmp/sf-epel-pyrpms.tar.gz"
+        "/root/sf-epel-pyrpms.tar.gz"
+    )
+
+    for p in "${EPEL_TAR_CANDIDATES[@]}"; do
+        if [[ -f "$p" ]]; then
+            ok "找到 tar: $p"
+            cp "$p" "$EPEL_DIR/sf-epel-pyrpms.tar.gz"
+            tar xzf "$EPEL_DIR/sf-epel-pyrpms.tar.gz" -C "$EPEL_DIR"
+            # tar 內結構是 rpms/*.rpm
+            [[ -d "$EPEL_DIR/rpms" ]] && EPEL_RPM_DIR="$EPEL_DIR/rpms"
+            break
+        fi
+    done
+fi
+
+# 模式 3: 試 curl github (SF 有外網才會成功)
+if [[ -z "$EPEL_RPM_DIR" ]]; then
     EPEL_TAR_URL="https://github.com/alienid4/cl_ftp/raw/main/release-zip/sf-epel-pyrpms.tar.gz"
-    warn "本地沒找到 tar, 嘗試 curl github (10 秒 timeout)..."
-    if curl -fsSL --max-time 10 -o sf-epel-pyrpms.tar.gz "$EPEL_TAR_URL"; then
+    warn "本地沒散檔也沒 tar, 嘗試 curl github (10 秒 timeout)..."
+    if curl -fsSL --max-time 10 -o "$EPEL_DIR/sf-epel-pyrpms.tar.gz" "$EPEL_TAR_URL"; then
         ok "github curl 成功"
-        EPEL_TAR_FOUND="$EPEL_TAR_URL"
-    else
-        echo ""
-        fail "
-EPEL tar 找不到. 請按以下步驟:
-
-  1. 在能連 github 的 PC 下載 (或自行用 dl.fedoraproject.org 點 7 個 RPM 連結
-     後跑 pack_local_rpms.ps1 打 tar):
-     https://github.com/alienid4/cl_ftp/raw/main/release-zip/sf-epel-pyrpms.tar.gz
-
-  2. scp 到 SF (USER 軟體目錄, 推薦):
-     scp sf-epel-pyrpms.tar.gz root@<SF-IP>:/tmp/ftp-lab/
-
-  3. 重跑本腳本.
-
-支援的 tar 位置 (擇一):
-$(printf '   - %s\n' "${EPEL_TAR_CANDIDATES[@]}")
-"
+        tar xzf "$EPEL_DIR/sf-epel-pyrpms.tar.gz" -C "$EPEL_DIR"
+        [[ -d "$EPEL_DIR/rpms" ]] && EPEL_RPM_DIR="$EPEL_DIR/rpms"
     fi
 fi
 
-tar xzf sf-epel-pyrpms.tar.gz
-RPM_COUNT=$(ls rpms/*.rpm 2>/dev/null | wc -l)
-if [[ "$RPM_COUNT" -lt 5 ]]; then
-    fail "解壓後 RPM 太少 ($RPM_COUNT), tar 損壞"
+# 都沒找到 → 印 USER 操作步驟
+if [[ -z "$EPEL_RPM_DIR" ]]; then
+    fail "
+EPEL Python RPM 找不到. 請按以下步驟之一:
+
+[方法 A] 散檔 (你已下載 7 個 .rpm):
+  把 7 個 python3-*.rpm scp 到 SF 的下列任一目錄:
+$(printf '   - %s\n' "${RPM_DIR_CANDIDATES[@]}")
+
+[方法 B] 預打 tar:
+  PC: .\\pack_local_rpms.ps1 -SrcDir C:\\Temp\\epel-rpms
+  PC: scp release-zip\\sf-epel-pyrpms.tar.gz root@<SF-IP>:/tmp/ftp-lab/
+  (tar 內結構: rpms/*.rpm)
+
+跑完重來: sudo bash $0
+"
 fi
-ok "解壓 $RPM_COUNT 個 EPEL RPM"
+
+# 確認 RPM 數量 + 必要套件
+RPM_COUNT=$(ls "$EPEL_RPM_DIR"/*.rpm 2>/dev/null | wc -l)
+if [[ "$RPM_COUNT" -lt 5 ]]; then
+    fail "RPM 太少 ($RPM_COUNT), 至少要 7 個 (flask/werkzeug/gunicorn/itsdangerous/click/blinker/ldap3)"
+fi
+ok "找到 $RPM_COUNT 個 RPM 待安裝"
+ls "$EPEL_RPM_DIR"/*.rpm | xargs -n1 basename | sed 's/^/    /'
+
+cd "$EPEL_DIR"
 
 # dnf install local RPMs (--disablerepo=* 避免去找線上 EPEL)
-echo "[exec] dnf install local RPMs ..."
-dnf install -y --disablerepo='*' --nogpgcheck ./rpms/*.rpm 2>&1 | tail -10 || {
+echo "[exec] dnf install local RPMs (from $EPEL_RPM_DIR)..."
+dnf install -y --disablerepo='*' --nogpgcheck "$EPEL_RPM_DIR"/*.rpm 2>&1 | tail -10 || {
     warn "dnf install 部分失敗, 嘗試 rpm -Uvh ..."
-    rpm -Uvh --replacefiles --replacepkgs ./rpms/*.rpm 2>&1 | tail -10 || \
+    rpm -Uvh --replacefiles --replacepkgs "$EPEL_RPM_DIR"/*.rpm 2>&1 | tail -10 || \
         fail "EPEL RPM 安裝失敗"
 }
 
@@ -137,7 +162,7 @@ dnf install -y --disablerepo='*' --nogpgcheck ./rpms/*.rpm 2>&1 | tail -10 || {
 MISSING=()
 for mod in flask werkzeug; do
     if /usr/bin/python3 -c "import $mod" 2>/dev/null; then
-        ok "python3 -c 'import $mod' OK (來自 EPEL tar)"
+        ok "python3 -c 'import $mod' OK (來自 EPEL local)"
     else
         MISSING+=("$mod")
         warn "$mod import 失敗"
