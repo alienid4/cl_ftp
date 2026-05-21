@@ -1,15 +1,13 @@
 name: Build EPEL Python RPM Bundle
 
-# 用途: 在 Rocky Linux 9 容器抓 EPEL Python RPMs 打成 tar
-#       SF 主機 (無 EPEL) 用 fix_portal.sh 拉這 tar 安裝
-#
-# 觸發:
-#   1. 手動 (Actions 頁面 Run workflow)
-#   2. push: deploy-rhel/build_epel_pyrpms.sh 改了自動跑
+# 用途: Rocky Linux 9 容器抓 EPEL Python RPMs 打成 tar
+# 觸發: 手動 (Actions 頁 Run workflow) 或 push 到 main
 
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - 'deploy-rhel/build_epel_pyrpms.sh'
       - '.github/workflows/build-epel-pyrpms.yml'
@@ -20,42 +18,42 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      - name: Build EPEL Python RPM bundle in Rocky 9 container
+      - name: Show environment
+        run: |
+          echo "=== Runner OS ==="
+          uname -a
+          echo ""
+          echo "=== Docker version ==="
+          docker --version
+          echo ""
+          echo "=== Repo files ==="
+          ls -la deploy-rhel/build_epel_pyrpms.sh
+
+      - name: Build EPEL bundle in Rocky 9
         run: |
           mkdir -p output
           docker run --rm \
             -v "${PWD}:/repo:ro" \
             -v "${PWD}/output:/output" \
             rockylinux:9 \
-            bash -ex -c '
-              echo "=== Container OS ==="
-              cat /etc/redhat-release
+            /bin/bash -ex /repo/deploy-rhel/build_epel_pyrpms.sh /output
 
-              echo ""
-              echo "=== Run build script ==="
-              bash /repo/deploy-rhel/build_epel_pyrpms.sh /output
-
-              echo ""
-              echo "=== Output ==="
-              ls -lh /output/
-            '
-
-      - name: Show output
+      - name: List output
         run: |
-          echo "=== output/ ==="
           ls -lh output/
-          echo ""
-          echo "=== sha256 ==="
           cat output/sf-epel-pyrpms.tar.gz.sha256
 
-      - name: Commit tar back to release-zip/
+      - name: Commit tar to release-zip/
         run: |
-          # 把 tar 放到 release-zip/ 並 commit
           cp output/sf-epel-pyrpms.tar.gz release-zip/sf-epel-pyrpms.tar.gz
           cp output/sf-epel-pyrpms.tar.gz.sha256 release-zip/sf-epel-pyrpms.tar.gz.sha256
 
@@ -65,15 +63,19 @@ jobs:
           git add release-zip/sf-epel-pyrpms.tar.gz release-zip/sf-epel-pyrpms.tar.gz.sha256
 
           if git diff --staged --quiet; then
-            echo "no changes to commit"
+            echo "No changes to commit"
             exit 0
           fi
 
-          git commit -m "ci: update EPEL Python RPM bundle [skip-version]
-
-Built from deploy-rhel/build_epel_pyrpms.sh
-Contains EPEL Python packages for SF Portal (Flask + deps).
-
-Co-Authored-By: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
-
+          git commit -m "ci: update EPEL Python RPM bundle [skip-version]"
           git push origin HEAD:main
+
+      - name: Upload as artifact (backup)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sf-epel-pyrpms
+          path: |
+            output/sf-epel-pyrpms.tar.gz
+            output/sf-epel-pyrpms.tar.gz.sha256
+          retention-days: 14
