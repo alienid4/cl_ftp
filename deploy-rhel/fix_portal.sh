@@ -53,27 +53,59 @@ for mod in psycopg2 cryptography; do
     fi
 done
 
-# === Step 1b: 從 git 拉 EPEL Python RPM tar 安裝 (公司禁 EPEL 的解法) ===
-step "Step 1b: 拉 EPEL Python RPM tar (從 git raw URL)"
+# === Step 1b: EPEL Python RPM tar 安裝 (公司禁 EPEL + SF 不能上網的解法) ===
+step "Step 1b: 找 EPEL Python RPM tar"
 
-EPEL_TAR_URL="https://github.com/alienid4/cl_ftp/raw/main/release-zip/sf-epel-pyrpms.tar.gz"
-EPEL_SHA_URL="${EPEL_TAR_URL}.sha256"
 EPEL_DIR="/tmp/sf-epel-pyrpms"
-
 mkdir -p "$EPEL_DIR"
 cd "$EPEL_DIR"
 
-echo "[exec] wget $EPEL_TAR_URL ..."
-if ! curl -fsSL -o sf-epel-pyrpms.tar.gz "$EPEL_TAR_URL"; then
-    fail "下載 EPEL tar 失敗 — 確認 SF 主機可達 github.com, 或聯絡 IT"
-fi
+# 優先順序: 本地檔 → curl github
+# (SF 主機不能上網的話, USER 要先在 PC 抓 tar 拷到下列任一位置)
+EPEL_TAR_CANDIDATES=(
+    "/opt/sf/release-zip/sf-epel-pyrpms.tar.gz"   # git clone 過就有
+    "/opt/sf/sf-epel-pyrpms.tar.gz"
+    "/tmp/sf-epel-pyrpms.tar.gz"
+    "/root/sf-epel-pyrpms.tar.gz"
+)
 
-# 驗 sha256 (如果 .sha256 抓得到)
-if curl -fsSL -o sf-epel-pyrpms.tar.gz.sha256 "$EPEL_SHA_URL" 2>/dev/null; then
-    if sha256sum -c sf-epel-pyrpms.tar.gz.sha256 &>/dev/null; then
-        ok "SHA-256 驗證通過"
+EPEL_TAR_FOUND=""
+for p in "${EPEL_TAR_CANDIDATES[@]}"; do
+    if [[ -f "$p" ]]; then
+        EPEL_TAR_FOUND="$p"
+        cp "$p" "$EPEL_DIR/sf-epel-pyrpms.tar.gz"
+        ok "找到本地 tar: $p"
+        break
+    fi
+done
+
+# 沒找到本地, 試 curl github (SF 有外網才會成功)
+if [[ -z "$EPEL_TAR_FOUND" ]]; then
+    EPEL_TAR_URL="https://github.com/alienid4/cl_ftp/raw/main/release-zip/sf-epel-pyrpms.tar.gz"
+    warn "本地沒找到 tar, 嘗試 curl github (10 秒 timeout)..."
+    if curl -fsSL --max-time 10 -o sf-epel-pyrpms.tar.gz "$EPEL_TAR_URL"; then
+        ok "github curl 成功"
+        EPEL_TAR_FOUND="$EPEL_TAR_URL"
     else
-        warn "SHA-256 不符, 但繼續 (檔案可能還是好的)"
+        echo ""
+        fail "
+EPEL tar 找不到. 請按以下步驟:
+
+  1. 在能連 github 的 PC 下載:
+     https://github.com/alienid4/cl_ftp/raw/main/release-zip/sf-epel-pyrpms.tar.gz
+
+  2. 透過你公司核可的方式拷到 SF 主機, 放任一位置:
+     - /opt/sf/release-zip/sf-epel-pyrpms.tar.gz   (建議, 跟 git repo 一致)
+     - /opt/sf/sf-epel-pyrpms.tar.gz
+     - /tmp/sf-epel-pyrpms.tar.gz
+     - /root/sf-epel-pyrpms.tar.gz
+
+  3. 或如果 /opt/sf 是 git clone 的:
+     cd /opt/sf && git pull
+     (tar 會跟著 git pull 一起到位)
+
+  4. 重跑本腳本.
+"
     fi
 fi
 
