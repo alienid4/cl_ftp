@@ -21,9 +21,11 @@
 #   - Portal source:                         /tmp/ftp-lab/portal/ 或 /opt/sf/portal/
 #
 
-set -euo pipefail
+# 注意: 不用 set -e (避免某個 psql / systemctl 警告就 abort 整個 script)
+# 各 step 自己用 || warn 處理錯誤
+set -uo pipefail
 
-VERSION="fix_portal v2.2.3 (2026-05-21)"
+VERSION="fix_portal v2.2.4 (2026-05-21)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -242,20 +244,33 @@ chown -R "$RUN_USER:$RUN_USER" /opt/portal
 # === Step 3: 寫 appsettings.json ===
 step "Step 3: 寫 Portal appsettings.json"
 
-if [[ ! -f /opt/portal/app/appsettings.json ]]; then
-    # 切到 /tmp 避免 postgres user 沒權限 cd 當前目錄 (/tmp/sf-epel-pyrpms)
-    cd /tmp
+# 切到 /tmp 避免 postgres user 沒權限 cd 當前目錄
+cd /tmp
 
-    # 1. 建 database (不能在 DO block 內, postgres 限制)
-    if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='file_exchange_audit'" 2>/dev/null | grep -q 1; then
-        sudo -u postgres psql -c "CREATE DATABASE file_exchange_audit;" 2>&1 | tail -3
+# === DB + user 永遠跑 (idempotent), 不關 appsettings.json 在不在 ===
+
+# 1. 建 database
+if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='file_exchange_audit'" 2>/dev/null | grep -q 1; then
+    if sudo -u postgres psql -c "CREATE DATABASE file_exchange_audit;" 2>&1 | tail -3; then
         ok "Database file_exchange_audit 建立"
     else
-        ok "Database file_exchange_audit 已存在"
+        warn "CREATE DATABASE 失敗, 看上面訊息"
     fi
+else
+    ok "Database file_exchange_audit 已存在"
+fi
 
-    # 2. 建 user (DO block 可以)
-    sudo -u postgres psql <<EOF 2>&1 | tail -5
+# 2. 重新讀 DB 密碼 (如果 appsettings.json 已存在, 用裡面的; 否則用新生的)
+if [[ -f /opt/portal/app/appsettings.json ]]; then
+    EXISTING_PASS=$(grep -oP 'postgresql://portal:\K[^@]+' /opt/portal/app/appsettings.json 2>/dev/null || true)
+    if [[ -n "$EXISTING_PASS" ]]; then
+        DB_PASS="$EXISTING_PASS"
+        ok "用既有 appsettings.json 內的 DB 密碼"
+    fi
+fi
+
+# 3. 建 / 更新 portal user
+sudo -u postgres psql <<EOF 2>&1 | tail -5
 DO \$\$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'portal') THEN
@@ -266,8 +281,12 @@ BEGIN
 END \$\$;
 
 GRANT ALL PRIVILEGES ON DATABASE file_exchange_audit TO portal;
+ALTER DATABASE file_exchange_audit OWNER TO portal;
 EOF
+ok "Portal user 建立 / 更新"
 
+# 4. 寫 appsettings.json (如果還沒)
+if [[ ! -f /opt/portal/app/appsettings.json ]]; then
     cat > /opt/portal/app/appsettings.json <<EOF
 {
     "DATABASE_URL": "postgresql://portal:$DB_PASS@127.0.0.1:5432/file_exchange_audit",
@@ -281,21 +300,26 @@ EOF
     chmod 640 /opt/portal/app/appsettings.json
     chown "$RUN_USER:$RUN_USER" /opt/portal/app/appsettings.json
     ok "appsettings.json 寫入"
-
-    # 套 schema 如果有
-    if [[ -f /opt/sf/sql/01_create_db_postgres.sql ]]; then
-        sudo -u postgres psql -d file_exchange_audit < /opt/sf/sql/01_create_db_postgres.sql 2>&1 | tail -3 || warn "schema 套用部分失敗"
-        ok "Schema 套用"
-    fi
 else
     ok "appsettings.json 已存在, skip"
 fi
 
+# 5. 套 schema (永遠嘗試)
+if [[ -f /opt/sf/sql/01_create_db_postgres.sql ]]; then
+    sudo -u postgres psql -d file_exchange_audit < /opt/sf/sql/01_create_db_postgres.sql 2>&1 | tail -3 || warn "schema 套用部分失敗 (可能 DB 不存在)"
+    ok "Schema 套用嘗試完成"
+elif [[ -f /tmp/ftp-lab/sql/01_create_db_postgres.sql ]]; then
+    sudo -u postgres psql -d file_exchange_audit < /tmp/ftp-lab/sql/01_create_db_postgres.sql 2>&1 | tail -3 || warn "schema 套用部分失敗"
+    ok "Schema 套用嘗試完成 (from /tmp/ftp-lab/sql/)"
+else
+    warn "找不到 schema SQL 檔 (Portal 第一次跑時會自動建表)"
+fi
+
 # 修 pg_hba.conf 允許 portal 連
 PG_HBA=$(find /var/lib/pgsql /etc/postgresql -name pg_hba.conf 2>/dev/null | head -1)
-if [[ -n "$PG_HBA" ]] && ! grep -q "host.*file_exchange_audit.*portal.*127.0.0.1" "$PG_HBA"; then
-    echo "host    file_exchange_audit    portal    127.0.0.1/32    md5" >> "$PG_HBA"
-    systemctl reload postgresql
+if [[ -n "$PG_HBA" ]] && ! grep -q "host.*file_exchange_audit.*portal.*127.0.0.1" "$PG_HBA" 2>/dev/null; then
+    echo "host    file_exchange_audit    portal    127.0.0.1/32    md5" >> "$PG_HBA" || warn "寫 pg_hba.conf 失敗"
+    systemctl reload postgresql 2>&1 | tail -2 || warn "reload postgresql 失敗 (繼續)"
     ok "pg_hba.conf 允許 portal 連 (127.0.0.1)"
 fi
 
