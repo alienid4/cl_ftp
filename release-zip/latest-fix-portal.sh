@@ -23,7 +23,7 @@
 
 set -euo pipefail
 
-VERSION="fix_portal v2.2.2 (2026-05-21)"
+VERSION="fix_portal v2.2.3 (2026-05-21)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -243,15 +243,19 @@ chown -R "$RUN_USER:$RUN_USER" /opt/portal
 step "Step 3: 寫 Portal appsettings.json"
 
 if [[ ! -f /opt/portal/app/appsettings.json ]]; then
-    # 從 PostgreSQL 取或建 portal user
-    sudo -u postgres psql <<EOF 2>&1 | tail -5
-DO \$\$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'file_exchange_audit') THEN
-        CREATE DATABASE file_exchange_audit;
-    END IF;
-END \$\$;
+    # 切到 /tmp 避免 postgres user 沒權限 cd 當前目錄 (/tmp/sf-epel-pyrpms)
+    cd /tmp
 
+    # 1. 建 database (不能在 DO block 內, postgres 限制)
+    if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='file_exchange_audit'" 2>/dev/null | grep -q 1; then
+        sudo -u postgres psql -c "CREATE DATABASE file_exchange_audit;" 2>&1 | tail -3
+        ok "Database file_exchange_audit 建立"
+    else
+        ok "Database file_exchange_audit 已存在"
+    fi
+
+    # 2. 建 user (DO block 可以)
+    sudo -u postgres psql <<EOF 2>&1 | tail -5
 DO \$\$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'portal') THEN
