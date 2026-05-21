@@ -41,11 +41,29 @@ jobs:
       - name: Build EPEL bundle in Rocky 9
         run: |
           mkdir -p output
+          # 把容器內所有輸出寫進 build.log, 失敗也能看
           docker run --rm \
             -v "${PWD}:/repo:ro" \
             -v "${PWD}/output:/output" \
             rockylinux:9 \
-            /bin/bash -ex /repo/deploy-rhel/build_epel_pyrpms.sh /output
+            /bin/bash -c '
+              set -ex
+              exec > >(tee -a /output/build.log) 2>&1
+              echo "=== Container info ==="
+              cat /etc/redhat-release
+              echo "uname: $(uname -a)"
+              echo ""
+              echo "=== Installing prereqs (which / awk / etc) ==="
+              dnf install -y --setopt=install_weak_deps=False \
+                  which awk findutils tar gzip coreutils 2>&1 | tail -5
+              echo ""
+              echo "=== Running build script ==="
+              bash /repo/deploy-rhel/build_epel_pyrpms.sh /output
+            ' || {
+              echo "[BUILD FAILED] 印出 build.log 末段:"
+              tail -50 output/build.log 2>/dev/null || echo "(no build.log)"
+              exit 1
+            }
 
       - name: List output
         run: |
@@ -70,7 +88,7 @@ jobs:
           git commit -m "ci: update EPEL Python RPM bundle [skip-version]"
           git push origin HEAD:main
 
-      - name: Upload as artifact (backup)
+      - name: Upload artifact (always, 含 build.log 給 debug)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -78,4 +96,6 @@ jobs:
           path: |
             output/sf-epel-pyrpms.tar.gz
             output/sf-epel-pyrpms.tar.gz.sha256
+            output/build.log
+          if-no-files-found: warn
           retention-days: 14
