@@ -19,9 +19,11 @@ param(
 
     [string]$SfUser = "root",
 
-    [string]$SfPath = "/opt/sf",
+    [string]$SfPath = "/tmp/ftp-lab",     # USER 軟體目錄
 
-    [switch]$SkipGitPull
+    [switch]$SkipGitPull,
+
+    [switch]$IncludePortalSrc             # 帶 portal/ source 一起傳
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,13 +60,15 @@ if (-not (Test-Path $tarPath)) {
 $tarSize = (Get-Item $tarPath).Length / 1MB
 Write-Ok "找到 $tarPath ($([math]::Round($tarSize, 2)) MB)"
 
-# 列要傳的檔
+# 列要傳的檔 (版本化的)
+$VERSION = "v2.2.0"
 $filesToSend = @(
     "release-zip\sf-epel-pyrpms.tar.gz",
     "release-zip\sf-epel-pyrpms.tar.gz.sha256",
-    "release-zip\latest-fix-portal.sh",
-    "release-zip\latest-diagnose.sh",
-    "release-zip\latest-net-check.sh"
+    "release-zip\fix-portal-$VERSION.sh",
+    "release-zip\diagnose-$VERSION.sh",
+    "release-zip\net-check-$VERSION.sh",
+    "release-zip\repo-check-$VERSION.sh"
 )
 
 Write-Host ""
@@ -79,29 +83,41 @@ $filesToSend | ForEach-Object {
 }
 
 # === Step 3: scp ===
-Write-Step "Step 3: scp 到 $SfUser@$SfHost`:$SfPath/release-zip/"
+Write-Step "Step 3: scp 到 $SfUser@$SfHost`:$SfPath/"
 
 # 確認 SF 有目錄
 Write-Host "[exec] ssh 建目錄..."
-ssh "$SfUser@$SfHost" "mkdir -p $SfPath/release-zip"
+ssh "$SfUser@$SfHost" "mkdir -p $SfPath"
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "ssh 失敗, 確認 IP / 帳號 / SSH key"
 }
 
 # scp 全部
-Write-Host "[exec] scp release-zip/* ..."
+Write-Host "[exec] scp 檔案 ..."
 $existingFiles = $filesToSend | Where-Object { Test-Path $_ }
-$scpArgs = $existingFiles + @("$SfUser@$SfHost`:$SfPath/release-zip/")
+$scpArgs = $existingFiles + @("$SfUser@$SfHost`:$SfPath/")
 scp @scpArgs
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "scp 失敗"
 }
 Write-Ok "scp 完成"
 
+# (可選) 帶 portal source 一起 (-IncludePortalSrc)
+if ($IncludePortalSrc -and (Test-Path "portal")) {
+    Write-Host ""
+    Write-Host "[exec] scp -r portal/ ..."
+    scp -r portal "$SfUser@$SfHost`:$SfPath/"
+    if ($LASTEXITCODE -eq 0) {
+        Write-Ok "portal/ source 傳完"
+    } else {
+        Write-Warn "portal/ scp 失敗"
+    }
+}
+
 # 驗 SHA-256
 Write-Host ""
 Write-Host "[exec] SF 端驗 SHA-256..."
-ssh "$SfUser@$SfHost" "cd $SfPath/release-zip && sha256sum -c sf-epel-pyrpms.tar.gz.sha256"
+ssh "$SfUser@$SfHost" "cd $SfPath && sha256sum -c sf-epel-pyrpms.tar.gz.sha256"
 if ($LASTEXITCODE -eq 0) {
     Write-Ok "SHA-256 驗證 OK"
 } else {
@@ -112,8 +128,12 @@ if ($LASTEXITCODE -eq 0) {
 Write-Step "完成 - SF 端跑這一行 (不需要網路)"
 Write-Host ""
 Write-Host "  ssh $SfUser@$SfHost" -ForegroundColor Yellow
-Write-Host "  sudo bash $SfPath/release-zip/latest-fix-portal.sh" -ForegroundColor Yellow
+Write-Host "  sudo bash $SfPath/fix-portal-$VERSION.sh" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "或直接從你 PC 一行跑:" -ForegroundColor Cyan
-Write-Host "  ssh $SfUser@$SfHost 'sudo bash $SfPath/release-zip/latest-fix-portal.sh'" -ForegroundColor White
+Write-Host "或從你 PC 一行跑:" -ForegroundColor Cyan
+Write-Host "  ssh $SfUser@$SfHost 'sudo bash $SfPath/fix-portal-$VERSION.sh'" -ForegroundColor White
+Write-Host ""
+if (-not $IncludePortalSrc) {
+    Write-Host "(若 Portal source 也要傳, 重跑加 -IncludePortalSrc)" -ForegroundColor DarkGray
+}
 Write-Host ""

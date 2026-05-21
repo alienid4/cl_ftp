@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# fix_portal.sh — 從零重建 Portal (用公司 dnf mirror, 不用 pip)
+# fix_portal.sh v2.2.0 — 從零重建 Portal
 #
 # 對應 diagnose.sh 找到的 5 個問題:
 #   - sf-portal.service 不存在
@@ -9,11 +9,21 @@
 #   - /opt/portal/venv 不存在
 #   - firewall 沒放行 80/5000
 #
-# 用法:
+# 用法 (SF 完全離線版, 推薦):
+#   sudo bash /tmp/ftp-lab/fix-portal-v2.2.0.sh
+#
+# 用法 (有 github 時, 即時下載):
 #   curl -fsSL https://github.com/alienid4/cl_ftp/raw/main/deploy-rhel/fix_portal.sh | sudo bash
+#
+# 預期套件來源:
+#   - EPEL Python (flask/werkzeug/gunicorn): /tmp/ftp-lab/sf-epel-pyrpms.tar.gz
+#   - RHEL Python (psycopg2/cryptography):    dnf install (走公司 Satellite)
+#   - Portal source:                         /tmp/ftp-lab/portal/ 或 /opt/sf/portal/
 #
 
 set -euo pipefail
+
+VERSION="fix_portal v2.2.0 (2026-05-21)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -28,8 +38,8 @@ DB_PASS="${SF_DB_PASS:-changeme_$(openssl rand -hex 4)}"
 
 echo ""
 echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BOLD}${CYAN}║   fix_portal.sh — 重建 SF Portal service                     ║${NC}"
-echo -e "${BOLD}${CYAN}║   (純 RHEL BaseOS/AppStream, 不用 EPEL, 不用 pip / venv)     ║${NC}"
+echo -e "${BOLD}${CYAN}║   $VERSION                              ║${NC}"
+echo -e "${BOLD}${CYAN}║   (SF 離線, EPEL tar 從本地讀, RHEL 套件走 Satellite)        ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
 
 # === Step 1: 裝 Python 套件 ===
@@ -63,6 +73,8 @@ cd "$EPEL_DIR"
 # 優先順序: 本地檔 → curl github
 # (SF 主機不能上網的話, USER 要先在 PC 抓 tar 拷到下列任一位置)
 EPEL_TAR_CANDIDATES=(
+    "/tmp/ftp-lab/sf-epel-pyrpms.tar.gz"          # 推薦位置 (USER 軟體目錄)
+    "/tmp/ftp-lab/release-zip/sf-epel-pyrpms.tar.gz"
     "/opt/sf/release-zip/sf-epel-pyrpms.tar.gz"   # git clone 過就有
     "/opt/sf/sf-epel-pyrpms.tar.gz"
     "/tmp/sf-epel-pyrpms.tar.gz"
@@ -91,20 +103,17 @@ if [[ -z "$EPEL_TAR_FOUND" ]]; then
         fail "
 EPEL tar 找不到. 請按以下步驟:
 
-  1. 在能連 github 的 PC 下載:
+  1. 在能連 github 的 PC 下載 (或自行用 dl.fedoraproject.org 點 7 個 RPM 連結
+     後跑 pack_local_rpms.ps1 打 tar):
      https://github.com/alienid4/cl_ftp/raw/main/release-zip/sf-epel-pyrpms.tar.gz
 
-  2. 透過你公司核可的方式拷到 SF 主機, 放任一位置:
-     - /opt/sf/release-zip/sf-epel-pyrpms.tar.gz   (建議, 跟 git repo 一致)
-     - /opt/sf/sf-epel-pyrpms.tar.gz
-     - /tmp/sf-epel-pyrpms.tar.gz
-     - /root/sf-epel-pyrpms.tar.gz
+  2. scp 到 SF (USER 軟體目錄, 推薦):
+     scp sf-epel-pyrpms.tar.gz root@<SF-IP>:/tmp/ftp-lab/
 
-  3. 或如果 /opt/sf 是 git clone 的:
-     cd /opt/sf && git pull
-     (tar 會跟著 git pull 一起到位)
+  3. 重跑本腳本.
 
-  4. 重跑本腳本.
+支援的 tar 位置 (擇一):
+$(printf '   - %s\n' "${EPEL_TAR_CANDIDATES[@]}")
 "
     fi
 fi
@@ -146,11 +155,30 @@ step "Step 2: 拷 Portal source 到 /opt/portal/app"
 
 mkdir -p /opt/portal/{app,logs,scripts}
 
-if [[ -d /opt/sf/portal ]]; then
-    cp -r /opt/sf/portal/* /opt/portal/app/
-    ok "拷貝 /opt/sf/portal/* -> /opt/portal/app/"
+# 找 Portal source (USER 軟體目錄優先)
+PORTAL_SRC_CANDIDATES=(
+    "/tmp/ftp-lab/portal"
+    "/tmp/ftp-lab/cl_ftp/portal"
+    "/opt/sf/portal"
+)
+
+PORTAL_SRC=""
+for d in "${PORTAL_SRC_CANDIDATES[@]}"; do
+    if [[ -d "$d" ]] && [[ -n "$(ls -A "$d" 2>/dev/null)" ]]; then
+        PORTAL_SRC="$d"
+        break
+    fi
+done
+
+if [[ -n "$PORTAL_SRC" ]]; then
+    cp -r "$PORTAL_SRC"/* /opt/portal/app/
+    ok "拷貝 $PORTAL_SRC/* -> /opt/portal/app/"
 else
-    fail "/opt/sf/portal 不存在, 請先跑 install_online.sh 拉 repo"
+    fail "Portal source 找不到, 請 scp 過去:
+  scp -r portal/ root@<SF-IP>:/tmp/ftp-lab/portal
+
+或從以下任一位置放:
+$(printf '   - %s\n' "${PORTAL_SRC_CANDIDATES[@]}")"
 fi
 
 # 用 nginx user 跑 (跟 nginx 同 uid 較簡單; 也可改 sf-portal)
