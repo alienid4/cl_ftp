@@ -1,10 +1,10 @@
 # release-zip 版本對照
 
-## 當前 (latest = v2.2.1)
+## 當前 (latest = v2.2.2)
 
 | 檔名 (versioned) | latest 別名 | 用途 |
 |---|---|---|
-| `fix-portal-v2.2.1.sh` ⭐ | `latest-fix-portal.sh` | 重建 Portal (支援散檔 .rpm + tar) |
+| `fix-portal-v2.2.2.sh` ⭐ | `latest-fix-portal.sh` | 重建 Portal (補 RHEL 依賴 + 過濾重複 .rpm) |
 | `diagnose-v2.2.0.sh` | `latest-diagnose.sh` | 9 項診斷 (sshd/nginx/portal/...) |
 | `net-check-v2.2.0.sh` | `latest-net-check.sh` | 測 SF 對外連通性 |
 | `repo-check-v2.2.0.sh` | `latest-repo-check.sh` | 確認 dnf repo + python3-flask 來源 |
@@ -38,6 +38,18 @@
 4. 更新本 VERSIONS.md
 
 ## 版本歷史
+
+### v2.2.2 (2026-05-21)
+- USER 跑 v2.2.1 失敗, 報缺 jinja2/packaging/pyasn1 依賴
+- Step 1a 加裝 RHEL AppStream:
+  python3-jinja2 (flask 需要)
+  python3-packaging (gunicorn 需要)
+  python3-pyasn1 (ldap3 需要)
+  python3-six python3-setuptools (常見依賴)
+- Step 1b 加過濾重複下載 "(1).rpm"
+- dnf install 拿掉 --disablerepo='*' (讓 dep 能從 RHEL repo 解)
+- 加 --allowerasing
+- fallback 用 rpm -Uvh --force --nodeps
 
 ### v2.2.1 (2026-05-21)
 - fix_portal.sh 支援 3 模式找 EPEL Python:

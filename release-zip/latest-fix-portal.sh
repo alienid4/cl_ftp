@@ -23,7 +23,7 @@
 
 set -euo pipefail
 
-VERSION="fix_portal v2.2.1 (2026-05-21)"
+VERSION="fix_portal v2.2.2 (2026-05-21)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -47,12 +47,19 @@ echo -e "${BOLD}${CYAN}╚══════════════════
 #   1a. 先 dnf 裝 RHEL BaseOS/AppStream 有的 (python3, pip, psycopg2, cryptography, requests)
 #   1b. EPEL 套件 (flask, werkzeug, gunicorn, ldap...) 從 git 拉預打好的 tar 安裝
 #       對應 GitHub Actions: .github/workflows/build-epel-pyrpms.yml
-step "Step 1a: 裝 RHEL BaseOS/AppStream Python 套件"
+step "Step 1a: 裝 RHEL BaseOS/AppStream Python 套件 (含 EPEL 套件依賴)"
 
+# 注意: 後面 EPEL flask/gunicorn/ldap3 需要這些 RHEL 套件做依賴:
+#   - python3-jinja2     (flask 模板, AppStream)
+#   - python3-packaging  (gunicorn, AppStream)
+#   - python3-pyasn1     (ldap3, AppStream)
+#   - python3-six        (一些套件需要, BaseOS)
 dnf install -y \
     python3 python3-pip \
     python3-psycopg2 \
-    python3-cryptography python3-requests 2>&1 | tail -5
+    python3-cryptography python3-requests \
+    python3-jinja2 python3-packaging python3-pyasn1 \
+    python3-six python3-setuptools 2>&1 | tail -10
 
 # 確認 RHEL 套件可 import
 for mod in psycopg2 cryptography; do
@@ -83,7 +90,17 @@ for d in "${RPM_DIR_CANDIDATES[@]}"; do
     if [[ -d "$d" ]] && ls "$d"/python3-flask-*.rpm &>/dev/null; then
         EPEL_RPM_DIR="$d"
         ok "找到散檔 RPM: $d/python3-*.rpm"
-        cp "$d"/python3-*.rpm "$EPEL_DIR/rpms/" 2>/dev/null || true
+
+        # 拷貝時過濾重複下載的 (1).rpm 之類
+        for f in "$d"/python3-*.rpm; do
+            bn=$(basename "$f")
+            # 跳過 "name (1).rpm" / "name (2).rpm" / "name-copy.rpm" 等變形
+            if [[ "$bn" =~ \([0-9]+\)\.rpm$ ]] || [[ "$bn" =~ -copy\.rpm$ ]]; then
+                warn "跳過重複下載: $bn"
+                continue
+            fi
+            cp "$f" "$EPEL_DIR/rpms/" 2>/dev/null || true
+        done
         break
     fi
 done
@@ -150,12 +167,15 @@ ls "$EPEL_RPM_DIR"/*.rpm | xargs -n1 basename | sed 's/^/    /'
 
 cd "$EPEL_DIR"
 
-# dnf install local RPMs (--disablerepo=* 避免去找線上 EPEL)
-echo "[exec] dnf install local RPMs (from $EPEL_RPM_DIR)..."
-dnf install -y --disablerepo='*' --nogpgcheck "$EPEL_RPM_DIR"/*.rpm 2>&1 | tail -10 || {
-    warn "dnf install 部分失敗, 嘗試 rpm -Uvh ..."
-    rpm -Uvh --replacefiles --replacepkgs "$EPEL_RPM_DIR"/*.rpm 2>&1 | tail -10 || \
-        fail "EPEL RPM 安裝失敗"
+# dnf install local RPMs
+# 注意: 不能用 --disablerepo='*', 因為 EPEL RPMs 需要 RHEL AppStream 的依賴
+#       (jinja2, packaging, pyasn1, six 等) - Step 1a 已裝
+# 用 --enablerepo=* 讓 dnf 可以從 RHEL repo 解依賴
+echo "[exec] dnf install local RPMs (from $EPEL_DIR/rpms)..."
+dnf install -y --nogpgcheck --allowerasing "$EPEL_DIR"/rpms/*.rpm 2>&1 | tail -15 || {
+    warn "dnf install 部分失敗, 嘗試 rpm -Uvh --force ..."
+    rpm -Uvh --force --nodeps "$EPEL_DIR"/rpms/*.rpm 2>&1 | tail -10 || \
+        fail "EPEL RPM 安裝失敗 — 看上方錯誤訊息哪個依賴缺"
 }
 
 # 確認 EPEL 來的模組可 import
