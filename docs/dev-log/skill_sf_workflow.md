@@ -200,6 +200,53 @@ v2.0 RHEL bundle: 打 .tar.gz 帶 .rpm → file conflict 連環坑 (10 個 patch
 1. **「跑這個 URL」+ 一條 URL**
 2. 簡短解釋這個 script 做什麼
 
+### 鐵律 9.1: 即時診斷指令也要進 `notes/note_<date>_<version>.md` (USER 2026-05-21 強化)
+
+當情境是 **「跑這 3 行查問題」**, **「貼一下 systemctl 輸出」** 這種臨時診斷:
+
+❌ 不能直接在 chat 列 systemctl / journalctl / tail / ss / curl 指令
+✅ 寫進 `notes/note_<YYYYMMDD>_<version>.md`, chat 只給 URL
+
+**命名規範**:
+```
+notes/note_<YYYYMMDD>_<version>.md
+```
+
+例:
+- `notes/note_20260521_v2.2.3.md` — Portal 起不來時的 3 個診斷指令
+- `notes/note_20260522_v2.2.5.md` — SFTP 測不通時的查法
+
+**內容結構**:
+```markdown
+# Note <日期> <版本> — <簡短主題>
+
+## 情境
+(USER 上次跑到哪、失敗訊息)
+
+## N 個診斷指令 (依序跑)
+1. ```
+   <bash 指令>
+   ```
+   預期看到 X, 看到 Y 代表 Z 原因
+
+## 把結果截圖回報
+
+## 對應版本表 (TBD 下一版要修啥)
+```
+
+**對應流程**:
+```
+USER 卡關回報   →   Claude 寫 note      →   commit + push
+                                              ↓
+                                       chat 只給 URL
+                                              ↓
+                                       USER 開 URL 看指令
+                                              ↓
+                                       SF 跑、回報結果
+                                              ↓
+                                       Claude 看結果 → 修 fix_portal 下一版
+```
+
 ### 反例 (我不要做的)
 
 ```
