@@ -99,3 +99,28 @@ jobs:
             output/build.log
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Commit build.log to repo (anonymous 可下載)
+        if: always()
+        run: |
+          if [[ ! -f output/build.log ]]; then
+            echo "(no build.log)" > output/build.log
+          fi
+
+          mkdir -p release-zip/_ci_debug
+          cp output/build.log release-zip/_ci_debug/build-epel-pyrpms.log
+
+          # 也順便印到 workflow stdout
+          echo "==================== build.log ===================="
+          cat release-zip/_ci_debug/build-epel-pyrpms.log
+          echo "==================== /build.log ===================="
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add release-zip/_ci_debug/build-epel-pyrpms.log
+          if git diff --staged --quiet; then
+            echo "no log change"
+          else
+            git commit -m "ci: update build.log [skip-version]"
+            git push origin HEAD:main || echo "push failed but log is in stdout above"
+          fi
