@@ -25,7 +25,7 @@
 
 set -uo pipefail   # 不要 set -e — 各 step 自己處理錯誤
 
-VERSION="install_portal_all_in_one v2.3.5 (2026-05-22)"
+VERSION="install_portal_all_in_one v2.3.6 (2026-05-22)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -57,8 +57,11 @@ SEARCH_ROOTS=(
 
 PORTAL_SRC_CANDIDATES=(
     "/tmp/ftp-lab/portal"
-    "/opt/sf/portal"
+    "/tmp/epel-rpms/portal"
     "/tmp/portal"
+    "/tmp/sf/portal"
+    "/opt/sf/portal"
+    "/opt/portal-src"
 )
 
 DB_PASS="${SF_DB_PASS:-changeme_$(openssl rand -hex 4)}"
@@ -152,18 +155,34 @@ for pat in "${REQUIRED_WHEELS[@]}"; do
     fi
 done
 
-# 找 Portal source
+# 找 Portal source - 先查候選路徑, 沒中再動態 find wsgi.py
 PORTAL_SRC=""
 for d in "${PORTAL_SRC_CANDIDATES[@]}"; do
     if [[ -d "$d" ]] && [[ -f "$d/wsgi.py" || -d "$d/app" ]]; then
         PORTAL_SRC="$d"
-        ok "Portal source: $d"
+        ok "Portal source (候選): $d"
         break
     fi
 done
+
+# Fallback: 動態 find wsgi.py 所在目錄 (有 app/ 子目錄的才算 portal)
 if [[ -z "$PORTAL_SRC" ]]; then
-    warn "缺 portal source (找了: ${PORTAL_SRC_CANDIDATES[*]})"
-    MISSING_FILES+=("portal/ source 目錄")
+    info "候選路徑都沒有, 動態 find wsgi.py ..."
+    while IFS= read -r wsgi_file; do
+        parent=$(dirname "$wsgi_file")
+        if [[ -d "$parent/app" ]]; then
+            PORTAL_SRC="$parent"
+            ok "Portal source (find): $PORTAL_SRC"
+            break
+        fi
+    done < <(find /tmp /opt /root /home -maxdepth 6 -name 'wsgi.py' -type f 2>/dev/null)
+fi
+
+if [[ -z "$PORTAL_SRC" ]]; then
+    warn "找不到 portal source"
+    warn "  候選路徑: ${PORTAL_SRC_CANDIDATES[*]}"
+    warn "  動態 find /tmp /opt /root /home -name 'wsgi.py' 也沒"
+    MISSING_FILES+=("portal/ source 目錄 (含 wsgi.py + app/)")
 fi
 
 if [[ ${#MISSING_FILES[@]} -gt 0 ]]; then
