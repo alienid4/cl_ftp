@@ -223,6 +223,37 @@ notes/<YYYYMMDD>/<version>_<feature>.md
 
 ❌ 不要寫成 `notes/note_20260521_v2.2.3.md` (USER 反映容易漏看)
 
+### 鐵律 9.2: release-zip/ 也用日期資料夾 (USER 2026-05-22 強化)
+
+`release-zip/` 也用同樣的「日期資料夾 + 版本檔名」結構, 一致化:
+
+```
+release-zip/
+├── VERSIONS.md
+├── latest-<name>.sh           ← root, 永遠是當前最新版的別名
+├── 20260519/
+│   └── sf-patch-v1.0.0.6.zip
+├── 20260520/
+│   └── ...
+├── 20260521/
+│   ├── fix-portal-v2.2.0.sh ~ v2.2.5
+│   ├── diagnose-v2.2.0.sh
+│   └── ...
+└── 20260522/
+    ├── install-portal-all-in-one-v2.3.7.sh
+    └── sf-portal-source-v2.3.6.tar.gz
+```
+
+**每次更新 release-zip 流程**:
+1. `deploy-rhel/<name>.sh` 改完 bump version 字串
+2. `cp deploy-rhel/<name>.sh release-zip/<今天日期>/<name>-v<X.Y.Z>.sh`
+3. `cp deploy-rhel/<name>.sh release-zip/latest-<name>.sh`
+4. 更新 `release-zip/VERSIONS.md`
+
+URL 範例:
+- `https://github.com/.../raw/main/release-zip/20260522/install-portal-all-in-one-v2.3.7.sh`
+- `https://github.com/.../raw/main/release-zip/latest-install-portal.sh` (永遠最新)
+
 **內容結構**:
 ```markdown
 # Note <日期> <版本> — <簡短主題>
