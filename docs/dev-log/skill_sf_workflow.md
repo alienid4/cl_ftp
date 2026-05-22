@@ -200,21 +200,28 @@ v2.0 RHEL bundle: 打 .tar.gz 帶 .rpm → file conflict 連環坑 (10 個 patch
 1. **「跑這個 URL」+ 一條 URL**
 2. 簡短解釋這個 script 做什麼
 
-### 鐵律 9.1: 即時診斷指令也要進 `notes/note_<date>_<version>.md` (USER 2026-05-21 強化)
+### 鐵律 9.1: 即時診斷指令也要進 `notes/<date>/<version>_<feature>.md` (USER 2026-05-22 強化)
 
 當情境是 **「跑這 3 行查問題」**, **「貼一下 systemctl 輸出」** 這種臨時診斷:
 
 ❌ 不能直接在 chat 列 systemctl / journalctl / tail / ss / curl 指令
-✅ 寫進 `notes/note_<YYYYMMDD>_<version>.md`, chat 只給 URL
+✅ 寫進 `notes/<YYYYMMDD>/<version>_<feature>.md`, chat 只給 URL
 
-**命名規範**:
+**命名規範 (USER 2026-05-22 確認)**:
 ```
-notes/note_<YYYYMMDD>_<version>.md
+notes/<YYYYMMDD>/<version>_<feature>.md
 ```
+
+- 日期當資料夾, 同一天的 note 都進該日資料夾
+- 檔名只放 `<version>_<feature>.md` (例: `v2.3.4_snapshot-fresh-install.md`)
+- USER 找 note 不用看日期字串前綴, 直接看日期資料夾
 
 例:
-- `notes/note_20260521_v2.2.3.md` — Portal 起不來時的 3 個診斷指令
-- `notes/note_20260522_v2.2.5.md` — SFTP 測不通時的查法
+- `notes/20260521/v2.2.3_diagnose.md` — Portal 起不來時的 3 個診斷指令
+- `notes/20260522/v2.3.4_snapshot-fresh-install.md` — Snapshot 後 fresh install
+- `notes/20260522/v2.3.7_portal-source-tar.md` — Portal source tar 路徑
+
+❌ 不要寫成 `notes/note_20260521_v2.2.3.md` (USER 反映容易漏看)
 
 **內容結構**:
 ```markdown
