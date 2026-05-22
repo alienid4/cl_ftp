@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>SF Portal — 當前架構與待接資料源</title>
+<style>
+:root {
+  --g1: #26A889;
+  --g2: #1B7960;
+  --orange: #FF8800;
+  --c1: #333;
+  --c2: #666;
+  --bg: #F5F7F6;
+  --bg2: #FAFAFA;
+  --border: #E0E0E0;
+  --ok: #26A889;
+  --warn: #FF8800;
+  --error: #D14343;
+  --pending: #999;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  background: var(--bg);
+  color: var(--c1);
+  margin: 0;
+  padding: 24px;
+  line-height: 1.6;
+}
+h1 { font-size: 24px; margin: 0 0 8px; color: var(--g2); }
+h2 { font-size: 18px; margin: 24px 0 12px; color: var(--g2); border-bottom: 2px solid var(--g1); padding-bottom: 6px; }
+h3 { font-size: 15px; margin: 12px 0 8px; }
+.subtitle { color: var(--c2); margin-bottom: 24px; font-size: 14px; }
+
+.container { max-width: 1400px; margin: 0 auto; }
+
+/* ===== Status badges ===== */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 6px;
+}
+.badge-ok      { background: #E0F5EF; color: var(--ok); }
+.badge-warn    { background: #FFF1DD; color: var(--warn); }
+.badge-error   { background: #FCE4E4; color: var(--error); }
+.badge-pending { background: #F0F0F0; color: var(--pending); }
+
+/* ===== Architecture diagram ===== */
+.arch {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.layer {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+.layer-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--c1);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--border);
+}
+.layer-clients .layer-title { color: #0066CC; }
+.layer-server .layer-title  { color: var(--g2); }
+.layer-deps   .layer-title  { color: #884488; }
+
+.node {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--g1);
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.node.client { border-left-color: #0066CC; }
+.node.dep    { border-left-color: #884488; }
+.node.svc    { border-left-color: var(--g1); }
+.node.svc.warn  { border-left-color: var(--warn); }
+.node.svc.error { border-left-color: var(--error); }
+.node.svc.pending { border-left-color: var(--pending); opacity: 0.7; }
+
+.node-name { font-weight: 600; font-size: 14px; }
+.node-port { font-family: Menlo, Consolas, monospace; font-size: 12px; color: var(--g2); }
+.node-desc { font-size: 12px; color: var(--c2); margin-top: 4px; }
+
+/* ===== Flow diagram ===== */
+.flow {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--c1);
+}
+
+/* ===== Port table ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+th { background: var(--g2); color: white; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 12px; }
+td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #FAFFF9; }
+td code { background: #F5F5F5; padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+
+/* ===== Status sidebar ===== */
+.checklist {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+.checklist-item {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed #f0f0f0;
+}
+.checklist-item:last-child { border-bottom: none; }
+.checklist-icon { font-size: 18px; line-height: 1; flex-shrink: 0; }
+.checklist-text { font-size: 13px; }
+.checklist-text strong { color: var(--g2); }
+
+/* ===== Status legend ===== */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+/* ===== Two-col layout ===== */
+.two-col {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.callout {
+  background: #FFF8E1;
+  border-left: 4px solid var(--warn);
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.callout.ok { background: #E0F5EF; border-left-color: var(--ok); }
+.callout strong { color: var(--g2); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>🏗️ SF Portal — 當前架構與待接資料源 (v2.4.6, 2026-05-22)</h1>
+<p class="subtitle">主程式 (Flask Portal + PostgreSQL + nginx) 已啟動跑起來。本圖列出尚未接的資料源 (SFTP / SMB / AD / PAM / 排程) 與對應該做的事。</p>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-dot" style="background:var(--g1);"></span> ✅ 已運作</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--warn);"></span> ⏳ 部分裝, 待設定</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--error);"></span> ❌ 完全未做</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--pending);"></span> 🔮 規劃中 (階段二)</div>
+</div>
+
+<!-- ===== 主圖 ===== -->
+<h2>三層架構圖</h2>
+
+<div class="arch">
+
+  <!-- ===== Clients ===== -->
+  <div class="layer layer-clients">
+    <div class="layer-title">⬅ Client 端 (進來)</div>
+
+    <div class="node client">
+      <div class="node-name">IT 管理員瀏覽器 ✅</div>
+      <div class="node-port">HTTP → SF:80</div>
+      <div class="node-desc">就是現在你用的。<br>http://10.92.198.14/</div>
+    </div>
+
+    <div class="node client" style="border-left-color:#FF8800; opacity:0.7;">
+      <div class="node-name">PRD AP 主機 ❌</div>
+      <div class="node-port">SFTP → SF:22</div>
+      <div class="node-desc">產線系統用 u01~u0X 帳號上傳檔案。<br><b>還沒接 — 22 port 還沒開, SFTP 也沒裝</b></div>
+    </div>
+
+    <div class="node client" style="border-left-color:#FF8800; opacity:0.7;">
+      <div class="node-name">OA 部門 USER ❌</div>
+      <div class="node-port">SMB → SF:445</div>
+      <div class="node-desc">檔案總管打 \\SF\dept\ 拖檔下載。<br><b>還沒接 — SMB server 沒裝</b></div>
+    </div>
+
+    <div class="node client" style="border-left-color:#FF8800; opacity:0.7;">
+      <div class="node-name">一般 AD USER ⏳</div>
+      <div class="node-port">HTTP → SF:80</div>
+      <div class="node-desc">用 AD 帳號登入 Portal 簽核。<br><b>目前 DEV_MODE 任何帳密都進去, AD 真實 bind 待設</b></div>
+    </div>
+  </div>
+
+  <!-- ===== SF Server ===== -->
+  <div class="layer layer-server">
+    <div class="layer-title">🖥️ SF 主機 (10.92.198.14) — RHEL 9</div>
+
+    <div class="node svc">
+      <div class="node-name">✅ nginx</div>
+      <div class="node-port">:80 → 127.0.0.1:5000</div>
+      <div class="node-desc">反向代理 + TLS termination (將來). 現在純 HTTP.</div>
+    </div>
+
+    <div class="node svc">
+      <div class="node-name">✅ gunicorn (Flask Portal)</div>
+      <div class="node-port">127.0.0.1:5000</div>
+      <div class="node-desc">Portal 主程式 — 簽核 / 業務代號 / 稽核 / 健康。<br>3 worker, /opt/portal/app/wsgi.py</div>
+    </div>
+
+    <div class="node svc">
+      <div class="node-name">✅ PostgreSQL</div>
+      <div class="node-port">127.0.0.1:5432</div>
+      <div class="node-desc">DB: file_exchange_audit<br>表: auditlog / businesscode / batch / batchfile / portaluser / sambapathhistory</div>
+    </div>
+
+    <div class="node svc warn">
+      <div class="node-name">⏳ OpenSSH SFTP</div>
+      <div class="node-port">:22 (RHEL 預設裝)</div>
+      <div class="node-desc">RHEL 9 預設 sshd 起來但 <b>沒做 chroot</b>, 沒建 u01~u04 帳號, 沒裝 PAM rotate.</div>
+    </div>
+
+    <div class="node svc error">
+      <div class="node-name">❌ Samba (smbd / nmbd)</div>
+      <div class="node-port">:445, :139</div>
+      <div class="node-desc">完全沒裝. 預期: <code>dnf install samba</code> 後設 share /data/exchange/samba/.</div>
+    </div>
+
+    <div class="node svc warn">
+      <div class="node-name">⏳ 排程 (batch_aggregator)</div>
+      <div class="node-port">cron / systemd timer</div>
+      <div class="node-desc">SFTP 新檔 → 自動建 Batch 紀錄 (滑動 30s 聚合). 還沒寫排程腳本.</div>
+    </div>
+
+    <div class="node svc">
+      <div class="node-name">✅ firewalld</div>
+      <div class="node-port">放行: 80, 5432 (本機)</div>
+      <div class="node-desc">22 / 445 還沒放. 後續加 SFTP / SMB 時要 firewall-cmd 加.</div>
+    </div>
+
+    <div class="node svc">
+      <div class="node-name">✅ SELinux</div>
+      <div class="node-port">enforcing</div>
+      <div class="node-desc">httpd_can_network_connect=on. SFTP/SMB 啟用後可能再加 boolean.</div>
+    </div>
+  </div>
+
+  <!-- ===== External Deps ===== -->
+  <div class="layer layer-deps">
+    <div class="layer-title">外部依賴 ➡</div>
+
+    <div class="node dep" style="opacity:0.7;">
+      <div class="node-name">⏳ Active Directory</div>
+      <div class="node-port">SF → DC:389 / 636</div>
+      <div class="node-desc">LDAP / LDAPS bind。<br><b>還沒接 — .env 還是 placeholder corp.local</b><br>需求單見 v2.4.4_ad-integration-sop</div>
+    </div>
+
+    <div class="node dep" style="opacity:0.7;">
+      <div class="node-name">⏳ Mail relay (SMTP)</div>
+      <div class="node-port">SF → relay:25</div>
+      <div class="node-desc">簽核通知信 / 異常告警。<br>.env 還是 mail-relay.corp.local</div>
+    </div>
+
+    <div class="node dep" style="opacity:0.5;">
+      <div class="node-name">🔮 PAM 系統 (階段二)</div>
+      <div class="node-port">SF → PAM:443 (webhook)</div>
+      <div class="node-desc">u01~u04 密碼自動 rotate + 申請串 chain_id。</div>
+    </div>
+
+    <div class="node dep" style="opacity:0.5;">
+      <div class="node-name">🔮 SIEM (階段二)</div>
+      <div class="node-port">SF → SIEM:514 / 6514 (syslog)</div>
+      <div class="node-desc">AuditLog 推 CEF 格式 forwarder。</div>
+    </div>
+
+    <div class="node dep" style="opacity:0.5;">
+      <div class="node-name">🔮 NTP server (階段一末)</div>
+      <div class="node-port">SF → NTP:123</div>
+      <div class="node-desc">w32tm 同步公司 NTP, 確保 AuditLog 時間與外部對得起來。</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== 流程圖 (ASCII) ===== -->
+<h2>典型流程: SFTP 上傳 → 簽核 → SMB 下載</h2>
+
+<div class="flow">
+[PRD AP 系統]   ─① sftp u01@SF / 上傳檔  ─►  [SF :22 OpenSSH]
+                                                     │
+                                                     ▼
+                                          /data/exchange/u01/inbound/
+                                                     │
+                                          ② 排程偵測新檔 (滑動 30s)
+                                                     ▼
+                                          INSERT INTO batch + batchfile
+                                                     │
+                                          ③ mail 通知 g_u01_approvers
+                                                     ▼
+[簽核人個人 PC]  ◄─ HTTP :80 ─►  [SF nginx → gunicorn :5000 → PostgreSQL :5432]
+                                                     │
+                                          ④ 點「全收」 (Portal)
+                                                     ▼
+                                          mv /data/exchange/u01/inbound/xxx
+                                                  → /data/exchange/samba/architecture/
+                                                     │
+                                          ⑤ AuditLog 寫入
+                                                     ▼
+[OA 端 USER]    ─⑥ \\SF\architecture\─►  [SF :445 Samba]   (還沒裝)
+                  或 Portal 批次 ZIP                          (Portal 端代下)
+</div>
+
+<div class="callout">
+<strong>目前進度</strong>: 第 ③ ④ ⑤ 步 (Portal 簽核 + DB 寫入) 已可走 dev 流程,
+但第 ① ② ⑥ 步 (SFTP 進來 / 排程 / SMB 出去) 還沒接,
+所以「上下游」沒進來,功能跑空轉。
+</div>
+
+<!-- ===== 連線埠總表 ===== -->
+<h2>連線埠 / Firewall 總表</h2>
+
+<table>
+<thead>
+<tr>
+  <th style="width:120px;">服務</th>
+  <th style="width:80px;">Port</th>
+  <th style="width:80px;">協定</th>
+  <th>方向</th>
+  <th style="width:90px;">狀態</th>
+  <th>備註</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>nginx (Portal)</td>
+  <td><code>80</code></td>
+  <td>HTTP</td>
+  <td>OA / IT 內網 → SF</td>
+  <td><span class="badge badge-ok">✅ 開</span></td>
+  <td>之後改 HTTPS:443 + 公司憑證</td>
+</tr>
+<tr>
+  <td>nginx (HTTPS)</td>
+  <td><code>443</code></td>
+  <td>HTTPS</td>
+  <td>OA / IT 內網 → SF</td>
+  <td><span class="badge badge-warn">⏳ 待</span></td>
+  <td>申請公司憑證, nginx config 加 listen 443 ssl</td>
+</tr>
+<tr>
+  <td>gunicorn (Flask)</td>
+  <td><code>5000</code></td>
+  <td>HTTP</td>
+  <td>127.0.0.1 (nginx 反代)</td>
+  <td><span class="badge badge-ok">✅ 開</span></td>
+  <td>只 bind 127.0.0.1, 不對外</td>
+</tr>
+<tr>
+  <td>PostgreSQL</td>
+  <td><code>5432</code></td>
+  <td>TCP</td>
+  <td>127.0.0.1 only</td>
+  <td><span class="badge badge-ok">✅ 開</span></td>
+  <td>portal user, file_exchange_audit DB</td>
+</tr>
+<tr>
+  <td>OpenSSH SFTP</td>
+  <td><code>22</code></td>
+  <td>SSH</td>
+  <td>PRD AP 主機 → SF</td>
+  <td><span class="badge badge-warn">⏳ 待</span></td>
+  <td>建 u01~u04 帳號 + chroot + 限定 source IP</td>
+</tr>
+<tr>
+  <td>FTPS (備案)</td>
+  <td><code>21 + 50000-50100</code></td>
+  <td>FTP/TLS</td>
+  <td>PRD AP 主機 → SF</td>
+  <td><span class="badge badge-pending">🔮 規劃</span></td>
+  <td>看哪台老 AP 不支援 SFTP 才開</td>
+</tr>
+<tr>
+  <td>SMB</td>
+  <td><code>445, 139</code></td>
+  <td>SMB</td>
+  <td>OA 部門 USER → SF</td>
+  <td><span class="badge badge-error">❌ 未做</span></td>
+  <td>Samba 還沒裝, 之後 dnf install samba</td>
+</tr>
+<tr>
+  <td>SSH 管理</td>
+  <td><code>22</code></td>
+  <td>SSH</td>
+  <td>跳板機 → SF</td>
+  <td><span class="badge badge-ok">✅ 開</span></td>
+  <td>跟 SFTP 同 port, 限管理員白名單</td>
+</tr>
+<tr>
+  <td>AD LDAP</td>
+  <td><code>389</code></td>
+  <td>LDAP</td>
+  <td>SF → DC</td>
+  <td><span class="badge badge-warn">⏳ 待</span></td>
+  <td>建議改 LDAPS</td>
+</tr>
+<tr>
+  <td>AD LDAPS</td>
+  <td><code>636</code></td>
+  <td>LDAP/TLS</td>
+  <td>SF → DC</td>
+  <td><span class="badge badge-warn">⏳ 待</span></td>
+  <td>DC 要先裝公司 CA 憑證</td>
+</tr>
+<tr>
+  <td>SMTP</td>
+  <td><code>25 / 587</code></td>
+  <td>SMTP</td>
+  <td>SF → mail relay</td>
+  <td><span class="badge badge-warn">⏳ 待</span></td>
+  <td>.env 內 SMTP_SERVER 待設</td>
+</tr>
+<tr>
+  <td>NTP</td>
+  <td><code>123</code></td>
+  <td>UDP</td>
+  <td>SF → 公司 NTP</td>
+  <td><span class="badge badge-warn">⏳ 待</span></td>
+  <td>chronyc / w32tm</td>
+</tr>
+<tr>
+  <td>SIEM Syslog</td>
+  <td><code>514 / 6514</code></td>
+  <td>UDP/TCP</td>
+  <td>SF → SIEM</td>
+  <td><span class="badge badge-pending">🔮 階段二</span></td>
+  <td>AuditLog forwarder, 用 CEF 格式</td>
+</tr>
+<tr>
+  <td>PAM webhook</td>
+  <td><code>443</code></td>
+  <td>HTTPS</td>
+  <td>SF ↔ PAM</td>
+  <td><span class="badge badge-pending">🔮 階段二</span></td>
+  <td>密碼 rotate + chain_id 串接</td>
+</tr>
+</tbody>
+</table>
+
+<!-- ===== 兩欄: 服務狀態 + 你要做的事 ===== -->
+<h2>下一步 (依優先序)</h2>
+
+<div class="two-col">
+
+<div class="checklist">
+<h3 style="margin-top:0;">🚦 接資料源優先序</h3>
+
+<div class="checklist-item">
+  <div class="checklist-icon">1️⃣</div>
+  <div class="checklist-text">
+    <strong>SFTP 上傳 (最優先)</strong> — 沒這個簽核流程跑不起來。<br>
+    動作: 建 u01~u04 本機帳號 + chroot 設定 + sshd_config + firewall 放 22。<br>
+    PAM 後接 (先用固定密碼測流程)。
+  </div>
+</div>
+
+<div class="checklist-item">
+  <div class="checklist-icon">2️⃣</div>
+  <div class="checklist-text">
+    <strong>排程 batch_aggregator</strong> — 沒這個, 上傳了 Portal 也看不到。<br>
+    動作: 寫 systemd timer 每 5 秒掃 /data/exchange/u0X/inbound/, 滑動 30s 聚合進 batch 表。
+  </div>
+</div>
+
+<div class="checklist-item">
+  <div class="checklist-icon">3️⃣</div>
+  <div class="checklist-text">
+    <strong>AD 整合 (DEV_MODE 關掉)</strong> — 沒這個只能用 dev 帳密。<br>
+    動作: 開單給 AD 管理員 (見 <code>v2.4.4_ad-integration-sop.md</code>), 拿到 AD_SERVER + 服務帳號後改 .env, restart sf-portal。
+  </div>
+</div>
+
+<div class="checklist-item">
+  <div class="checklist-icon">4️⃣</div>
+  <div class="checklist-text">
+    <strong>SMB 下載端</strong> — 沒這個 OA USER 拿不到檔。<br>
+    動作: <code>dnf install samba</code>, 設 share /data/exchange/samba/, 綁 dept_xxx_view AD 群組。<br>
+    替代: Portal 內建「批次 ZIP 下載」(USER 走 HTTP 拿, 不用 SMB).
+  </div>
+</div>
+
+<div class="checklist-item">
+  <div class="checklist-icon">5️⃣</div>
+  <div class="checklist-text">
+    <strong>HTTPS + 公司憑證</strong> — 改 http://10.92.198.14/ 為 https://sf.corp/<br>
+    動作: 申請 cert, nginx config 加 listen 443 ssl, 防火牆放 443。
+  </div>
+</div>
+
+<div class="checklist-item">
+  <div class="checklist-icon">6️⃣</div>
+  <div class="checklist-text">
+    <strong>SMTP 通知信</strong> — 沒這個簽核人不知道有檔要簽。<br>
+    動作: .env 內 SMTP_SERVER 換公司 mail relay IP, 寫測試信驗通。
+  </div>
+</div>
+
+<div class="checklist-item">
+  <div class="checklist-icon">7️⃣</div>
+  <div class="checklist-text">
+    <strong>NTP 同步</strong> — AuditLog 時間要跟外部對得起來。<br>
+    動作: <code>chronyc add server &lt;公司NTP&gt; iburst</code>。
+  </div>
+</div>
+
+<div class="checklist-item">
+  <div class="checklist-icon">8️⃣</div>
+  <div class="checklist-text">
+    <strong>PAM 整合 (階段二)</strong> — u01~u04 密碼 PAM 自動 rotate。<br>
+    階段一可以先固定密碼 (PAM 還沒接得上 SF 部分)。
+  </div>
+</div>
+
+<div class="checklist-item">
+  <div class="checklist-icon">9️⃣</div>
+  <div class="checklist-text">
+    <strong>SIEM forwarder (階段二)</strong> — AuditLog 推到公司 SIEM。<br>
+    階段一 AuditLog 留在 PG 自查就好。
+  </div>
+</div>
+
+</div>
+
+<div>
+
+<div class="callout ok">
+  <strong>✅ 已經跑起來的</strong><br>
+  • Portal Web (nginx 80 → gunicorn 5000 → PG 5432)<br>
+  • DB schema (6 表 + 1 view + 4 個 u01~u04 業務代號)<br>
+  • seed data (3 個 batch + 9 個檔 + 10 筆 audit log)<br>
+  • dev_mode 登入 (任何帳密)<br>
+  • UI 國泰風 (cathay.css)
+</div>
+
+<div class="callout">
+  <strong>⚠️ 注意</strong><br>
+  目前是 <b>單機 demo</b>, 不對外提供服務。<br>
+  上線前必做:<br>
+  1. DEV_MODE=false<br>
+  2. AD 真實 bind<br>
+  3. HTTPS<br>
+  4. 監控 + 備份排程
+</div>
+
+<div class="callout" style="background:#FCE4E4; border-left-color:var(--error);">
+  <strong>❌ 還不能做的事</strong><br>
+  • <b>真實 SFTP 上傳</b> (u01 帳號還沒建)<br>
+  • <b>真實 AD 登入</b> (DEV_MODE 假登入)<br>
+  • <b>OA USER SMB 下載</b> (Samba 沒裝)<br>
+  • <b>簽核完搬檔到 samba</b> (samba 目錄不存在)<br>
+  • <b>簽核通知信</b> (SMTP 沒接)
+</div>
+
+</div>
+
+</div>
+
+<!-- ===== 對應 note ===== -->
+<h2>對應 note (詳細步驟)</h2>
+
+<table>
+<thead><tr><th>主題</th><th>note 檔</th></tr></thead>
+<tbody>
+<tr><td>AD 串接</td><td><code>notes/20260522/v2.4.4_ad-integration-sop.md</code></td></tr>
+<tr><td>DEV_MODE 開關</td><td><code>notes/20260522/v2.4.4_dev-mode-bypass-ad.md</code></td></tr>
+<tr><td>v2.4.5 UI 對齊</td><td><code>notes/20260522/v2.4.5_ui-alignment-mockup.md</code></td></tr>
+<tr><td>v2.4.6 功能修復</td><td><code>notes/20260522/v2.4.6_fix-all-functions.md</code></td></tr>
+<tr><td>整體規畫 (Z 方案)</td><td><code>docs/architecture-v2.html</code></td></tr>
+</tbody>
+</table>
+
+<p style="text-align:center; color:var(--c2); font-size:12px; margin-top:32px;">
+SF Portal v2.4.6 · 2026-05-22 · <a href="https://github.com/alienid4/cl_ftp" style="color:var(--g2);">GitHub</a>
+</p>
+
+</div>
+
+</body>
+</html>
