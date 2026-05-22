@@ -25,7 +25,7 @@
 
 set -uo pipefail   # 不要 set -e — 各 step 自己處理錯誤
 
-VERSION="install_portal_all_in_one v2.3.4 (2026-05-22)"
+VERSION="install_portal_all_in_one v2.3.5 (2026-05-22)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -81,13 +81,31 @@ find_file() {
     local pattern="$1"
     for d in "${SEARCH_ROOTS[@]}"; do
         [[ -d "$d" ]] || continue
-        local f=$(find "$d" -maxdepth 2 -name "$pattern" 2>/dev/null | grep -v '(1).rpm' | grep -v '(2).rpm' | head -1)
+        # maxdepth 5 容納各種放法 + ERE 過濾 "(N)" 重複下載 (匹配 (1).rpm/(2).rpm 之類)
+        local f
+        f=$(find "$d" -maxdepth 5 -name "$pattern" -type f 2>/dev/null \
+            | grep -vE '\([0-9]+\)\.' \
+            | head -1)
         if [[ -n "$f" ]]; then
             echo "$f"
             return 0
         fi
     done
     return 1
+}
+
+# debug 用: 失敗時印 USER /tmp 結構幫忙看哪裡放錯
+dump_tmp_structure() {
+    echo ""
+    echo "=== /tmp/ftp-lab/ 內容 (debug) ==="
+    ls -la /tmp/ftp-lab/ 2>&1 | head -30
+    echo ""
+    echo "=== find /tmp -name '*.rpm' ==="
+    find /tmp -maxdepth 5 -name '*.rpm' 2>/dev/null | head -30
+    echo ""
+    echo "=== find /tmp -name '*.whl' ==="
+    find /tmp -maxdepth 5 -name '*.whl' 2>/dev/null | head -10
+    echo ""
 }
 
 # 7 個 EPEL RPM
@@ -150,8 +168,11 @@ fi
 
 if [[ ${#MISSING_FILES[@]} -gt 0 ]]; then
     echo ""
-    fail "缺 ${#MISSING_FILES[@]} 個必要檔. 確認以下都 scp 到 /tmp/ 任一子目錄:
-$(printf '  - %s\n' "${MISSING_FILES[@]}")
+    warn "缺 ${#MISSING_FILES[@]} 個必要檔:"
+    printf '  - %s\n' "${MISSING_FILES[@]}"
+    dump_tmp_structure
+    fail "
+請確認上述檔案都在 /tmp/ 任一子目錄, 然後重跑.
 
 下載清單:
   EPEL RPM: https://github.com/alienid4/cl_ftp/blob/main/docs/runbook/v2.2.0_20260521_epel_pyrpms_manual.md
