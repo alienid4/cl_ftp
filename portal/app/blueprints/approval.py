@@ -18,20 +18,25 @@ approval_bp = Blueprint('approval', __name__, template_folder='../templates')
 @login_required
 def list_view():
     """我的待簽 — 1 行 1 批"""
-    sql = """
-    SELECT b.*, bc.name AS business_name, bc.approver_ad_group, bc.samba_dir
-    FROM Batch b
-    JOIN BusinessCode bc ON b.business_code = bc.code
-    WHERE b.status = 'PENDING_APPROVAL'
-    ORDER BY b.last_file_at DESC
-    """
-    batches = query(sql)
-
-    # 過濾: 我必須是該業務的簽核 AD 群組成員
-    my_batches = [
-        b for b in batches
-        if current_user.can_approve(b['approver_ad_group'])
-    ]
+    from flask import current_app
+    try:
+        sql = """
+        SELECT b.*, bc.name AS business_name, bc.approver_ad_group, bc.samba_dir
+        FROM Batch b
+        JOIN BusinessCode bc ON b.business_code = bc.code
+        WHERE b.status = 'PENDING_APPROVAL'
+        ORDER BY b.last_file_at DESC
+        """
+        batches = query(sql) or []
+        # 過濾: 我必須是該業務的簽核 AD 群組成員
+        my_batches = [
+            b for b in batches
+            if current_user.can_approve(b.get('approver_ad_group', ''))
+        ]
+    except Exception as e:
+        current_app.logger.exception('[approval.list_view] 撈待簽失敗')
+        flash(f'撈待簽失敗: {e}', 'error')
+        my_batches = []
     return render_template('approval_list.html', batches=my_batches)
 
 
@@ -39,18 +44,28 @@ def list_view():
 @login_required
 def detail(batch_id):
     """簽核細節 — 顯示批次內所有檔, 可逐個勾選"""
-    batch = get_batch(batch_id)
-    if not batch:
-        abort(404)
+    from flask import current_app
+    try:
+        batch = get_batch(batch_id)
+        if not batch:
+            flash('找不到此批次', 'error')
+            return redirect(url_for('approval.list_view'))
 
-    bc = get_business_code(batch['business_code'])
-    if not current_user.can_approve(bc['approver_ad_group']):
-        log_audit('DENIED', actor_user=current_user.ad_account,
-                  batch_id=batch_id, result='DENIED',
-                  detail={'reason': 'not in approver group'})
-        abort(403)
+        bc = get_business_code(batch.get('business_code'))
+        if bc and not current_user.can_approve(bc.get('approver_ad_group', '')):
+            try:
+                log_audit('DENIED', actor_user=current_user.ad_account,
+                          batch_id=batch_id, result='DENIED',
+                          detail={'reason': 'not in approver group'})
+            except Exception:
+                pass
+            abort(403)
 
-    files = get_batch_files(batch_id)
+        files = get_batch_files(batch_id) or []
+    except Exception as e:
+        current_app.logger.exception('[approval.detail] 撈失敗')
+        flash(f'撈批次失敗: {e}', 'error')
+        return redirect(url_for('approval.list_view'))
     return render_template('approval_detail.html', batch=batch, bc=bc, files=files)
 
 

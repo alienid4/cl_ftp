@@ -21,24 +21,35 @@ def admin_required():
 @audit_bp.route('/query')
 @login_required
 def query_view():
+    from flask import flash, current_app
     admin_required()
 
-    # 查詢條件
     actor = request.args.get('actor', '').strip() or None
     biz = request.args.get('business_code', '').strip() or None
     file_pat = request.args.get('file', '').strip() or None
     ip = request.args.get('ip', '').strip() or None
     et = request.args.get('event_type', '').strip() or None
-    hours = int(request.args.get('hours', '24'))
+    try:
+        hours = int(request.args.get('hours', '24'))
+    except (ValueError, TypeError):
+        hours = 24
 
     since = datetime.utcnow() - timedelta(hours=hours)
-    results = search_audit(
-        actor=actor, business_code=biz, file_pattern=file_pat,
-        source_ip=ip, event_type=et, since=since, limit=500
-    )
+    try:
+        results = search_audit(
+            actor=actor, business_code=biz, file_pattern=file_pat,
+            source_ip=ip, event_type=et, since=since, limit=500
+        ) or []
+    except Exception as e:
+        current_app.logger.exception('[audit.query_view] search 失敗')
+        flash(f'稽核查詢失敗: {e}', 'error')
+        results = []
 
-    log_audit('AUDIT_QUERY', source_system='ADMIN', actor_user=current_user.ad_account,
-              detail={'conditions': dict(request.args)})
+    try:
+        log_audit('AUDIT_QUERY', source_system='ADMIN', actor_user=current_user.ad_account,
+                  detail={'conditions': dict(request.args)})
+    except Exception:
+        pass
 
     return render_template('audit_query.html', results=results, query=request.args)
 

@@ -75,13 +75,32 @@ def create_app(config: Config = None):
     @app.errorhandler(404)
     def page_not_found(e):
         from flask import render_template
-        return render_template('error.html', code=404, msg='Page not found'), 404
+        try:
+            return render_template('error.html', code=404, msg='Page not found'), 404
+        except Exception:
+            return '<h1>404</h1><p>Page not found</p><a href="/">回首頁</a>', 404
 
     @app.errorhandler(500)
     def internal_error(e):
         app.logger.exception('[ERROR] 500 internal')
-        from flask import render_template
-        return render_template('error.html', code=500, msg='Internal server error'), 500
+        import traceback
+        tb = traceback.format_exc()
+        # 試 render template, 失敗 fallback 純 HTML (避免 template 又炸再 500 loop)
+        try:
+            from flask import render_template
+            return render_template('error.html', code=500, msg='Internal server error'), 500
+        except Exception:
+            debug_block = ''
+            if app.config.get('DEBUG'):
+                import html as _html
+                debug_block = f'<pre style="background:#fee;padding:10px;font-size:11px;overflow:auto;">{_html.escape(tb)}</pre>'
+            return (f'<!DOCTYPE html><html><head><meta charset="UTF-8">'
+                    f'<title>500</title></head><body style="font-family:sans-serif;padding:40px;">'
+                    f'<h1 style="font-size:60px;margin:0;color:#c00;">500</h1>'
+                    f'<h2>Internal server error</h2>'
+                    f'<p>請聯絡 IT 管理員, 或回到 <a href="/">首頁</a>.</p>'
+                    f'{debug_block}'
+                    f'</body></html>'), 500
 
     app.logger.info('SF Portal ready.')
     return app
