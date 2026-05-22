@@ -262,34 +262,57 @@ notes/<YYYYMMDD>/<version>_<feature>.md
 
 ### 鐵律 9.2: release-zip/ 也用日期資料夾 (USER 2026-05-22 強化)
 
-`release-zip/` 也用同樣的「日期資料夾 + 版本檔名」結構, 一致化:
+`release-zip/` 也用「日期資料夾 + 版本前綴檔名」結構:
+
+**命名格式 (USER 2026-05-22 確認)**:
+```
+release-zip/<YYYYMMDD>/v<X.Y.Z>_<說明>.<ext>
+```
+
+版號前綴, 易於依版本排序; 同日多個版本 ls 出來會自然遞增順序。
 
 ```
 release-zip/
 ├── VERSIONS.md
-├── latest-<name>.sh           ← root, 永遠是當前最新版的別名
+├── latest-<name>.sh                  ← root, 永遠是當前最新版的別名
 ├── 20260519/
 │   └── sf-patch-v1.0.0.6.zip
 ├── 20260520/
 │   └── ...
-├── 20260521/
-│   ├── fix-portal-v2.2.0.sh ~ v2.2.5
-│   ├── diagnose-v2.2.0.sh
-│   └── ...
+├── 20260521/                         (舊格式保留, 不改 URL)
+│   ├── fix-portal-v2.2.0.sh
+│   └── diagnose-v2.2.0.sh
 └── 20260522/
-    ├── install-portal-all-in-one-v2.3.7.sh
-    └── sf-portal-source-v2.3.6.tar.gz
+    ├── (舊) install-portal-all-in-one-v2.3.7.sh        ← v2.3.7 之前格式
+    ├── (新) v2.3.9_install-portal-all-in-one.sh        ← v2.3.8+ 新格式
+    └── v2.3.9_sf-portal-source.tar.gz
 ```
+
+**「每次新動作就是新版號」** (USER 強化):
+- 改 db.py → 新版號
+- 改 install script → 新版號
+- 改 portal source → 新版號
+- 一次 commit 可以包多個檔, 但都用 **同一個版號**
 
 **每次更新 release-zip 流程**:
 1. `deploy-rhel/<name>.sh` 改完 bump version 字串
-2. `cp deploy-rhel/<name>.sh release-zip/<今天日期>/<name>-v<X.Y.Z>.sh`
+2. `cp deploy-rhel/<name>.sh release-zip/<今天日期>/v<X.Y.Z>_<name>.sh`
 3. `cp deploy-rhel/<name>.sh release-zip/latest-<name>.sh`
 4. 更新 `release-zip/VERSIONS.md`
 
 URL 範例:
-- `https://github.com/.../raw/main/release-zip/20260522/install-portal-all-in-one-v2.3.7.sh`
+- `https://github.com/.../raw/main/release-zip/20260522/v2.3.9_install-portal-all-in-one.sh`
 - `https://github.com/.../raw/main/release-zip/latest-install-portal.sh` (永遠最新)
+
+### 鐵律 9.3: 舊檔不動, 新檔用新格式 (USER 2026-05-22 確認)
+
+當 USER 改名命格式時 (例如本次 `<說明>-v<版號>` → `v<版號>_<說明>`):
+
+✅ 從**下一個版本**開始用新格式
+❌ 不要 rename 舊檔, 因為:
+- 舊檔 URL 散在 note, runbook, chat 歷史多處, rename 全要更新
+- 舊版本是 immutable history, 不該動
+- 新檔自然會用新格式, 1-2 個 sprint 後舊檔自然被淘汰
 
 **內容結構**:
 ```markdown
