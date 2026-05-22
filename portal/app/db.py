@@ -20,14 +20,19 @@ def _translate_sql(sql: str) -> str:
 
     - `?` placeholder → `%s` (psycopg2 標準)
     - `SYSUTCDATETIME()` → `(NOW() AT TIME ZONE 'UTC')`
+    - `SELECT TOP N ...` → `SELECT ... LIMIT N` (PG TOP 語法不存在)
     - `SCOPE_IDENTITY()` 處理 → execute_returning_id 自己加 RETURNING
     """
     # 1. ? → %s (但要小心: 已是 %s 的不要轉雙重)
-    # psycopg2 用 %s 但其實 % 在 SQL 字面意義也存在 (例如 LIKE '%foo%')
-    # 為避免衝突, 只在 ? 出現時換成 %s
     sql = re.sub(r'\?', '%s', sql)
     # 2. SYSUTCDATETIME() → (NOW() AT TIME ZONE 'UTC')
     sql = re.sub(r'\bSYSUTCDATETIME\(\)', "(NOW() AT TIME ZONE 'UTC')", sql, flags=re.IGNORECASE)
+    # 3. SELECT TOP N ... → SELECT ... LIMIT N (移到尾端)
+    top_match = re.search(r'\bSELECT\s+TOP\s+(\d+)\s+', sql, flags=re.IGNORECASE)
+    if top_match:
+        n = top_match.group(1)
+        sql = re.sub(r'\bSELECT\s+TOP\s+\d+\s+', 'SELECT ', sql, count=1, flags=re.IGNORECASE)
+        sql = sql.rstrip().rstrip(';').rstrip() + f' LIMIT {n}'
     return sql
 
 
