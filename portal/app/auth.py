@@ -2,6 +2,7 @@
 SF Portal — AD/LDAP 認證 + User Model
 使用者用 AD 帳號登入, Portal 從 AD 查群組成員, 不存個人密碼。
 """
+from typing import Optional
 from flask_login import UserMixin
 from flask import current_app
 from ldap3 import Server, Connection, ALL, NTLM, SUBTREE
@@ -31,7 +32,7 @@ class User(UserMixin):
         return self.is_in_group(download_group)
 
 
-def load_user(ad_account: str) -> User | None:
+def load_user(ad_account: str) -> Optional[User]:
     """flask-login 的 user_loader — 從 session 還原 User"""
     rec = query_one(
         "SELECT * FROM PortalUser WHERE ad_account = ? AND is_active = 1",
@@ -52,7 +53,7 @@ def load_user(ad_account: str) -> User | None:
     )
 
 
-def authenticate(username: str, password: str) -> User | None:
+def authenticate(username: str, password: str) -> Optional[User]:
     """
     對 AD 進行 LDAP bind 驗證。
     username 可以是 'CORP\\xxx' 或 'xxx' (自動補 domain)。
