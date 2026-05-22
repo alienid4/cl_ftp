@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}編輯業務代號 · {{ bc.code }}{% endblock %}
+{% block content %}
+<a href="{{ url_for('admin.biz_list') }}" style="font-size:13px;">← 返回業務代號清單</a>
+
+<h1>編輯業務代號 · <code>{{ bc.code }}</code></h1>
+
+<form method="post" class="card" style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
+    <div><label>名稱</label>
+        <input name="name" value="{{ bc.name }}" required style="width:100%;"></div>
+    <div><label>業務負責人 AD</label>
+        <input name="owner_ad" value="{{ bc.owner_ad or '' }}" style="width:100%;"></div>
+    <div><label>保留天數</label>
+        <input name="retention_days" type="number" value="{{ bc.retention_days }}" style="width:100%;"></div>
+    <div><label>目前 samba 路徑</label>
+        <input value="{{ bc.samba_dir }}" disabled style="width:100%;"></div>
+    <div style="grid-column:1/-1;">
+        <label>說明</label>
+        <textarea name="description" style="width:100%; min-height:60px;">{{ bc.description or '' }}</textarea>
+    </div>
+
+    <hr style="grid-column:1/-1;">
+    <div style="grid-column:1/-1;">
+        <h3>變更 samba 路徑 (危險, 會通知 OA 端 USER 重掛)</h3>
+    </div>
+    <div><label>新 samba 路徑</label>
+        <input name="new_samba_dir" placeholder="留空則不變更" style="width:100%;"></div>
+    <div><label>變更原因</label>
+        <input name="change_reason" placeholder="必填" style="width:100%;"></div>
+
+    <div style="grid-column:1/-1;">
+        <button type="submit" class="btn btn-primary">儲存</button>
+        <a href="{{ url_for('admin.biz_list') }}" class="btn btn-secondary">取消</a>
+    </div>
+</form>
+
+{% if path_history %}
+<h2 style="margin-top:30px;">samba 路徑變更歷史</h2>
+<table style="width:100%; border-collapse:collapse;">
+    <thead>
+        <tr style="border-bottom:2px solid #ccc;">
+            <th style="text-align:left; padding:6px;">時間</th>
+            <th style="text-align:left; padding:6px;">舊路徑</th>
+            <th style="text-align:left; padding:6px;">新路徑</th>
+            <th style="text-align:left; padding:6px;">變更者</th>
+            <th style="text-align:left; padding:6px;">原因</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for h in path_history %}
+        <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:6px;">{{ h.changed_at }}</td>
+            <td style="padding:6px;"><code>{{ h.old_path }}</code></td>
+            <td style="padding:6px;"><code>{{ h.new_path }}</code></td>
+            <td style="padding:6px;">{{ h.changed_by }}</td>
+            <td style="padding:6px;">{{ h.notes or '-' }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}新增業務代號{% endblock %}
+{% block content %}
+<a href="{{ url_for('admin.biz_list') }}" style="font-size:13px;">← 返回業務代號清單</a>
+
+<h1>新增業務代號</h1>
+
+<form method="post" class="card" style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px;">
+    <div><label>業務代號 (u0X)</label><input name="code" required style="width:100%;"></div>
+    <div><label>名稱</label><input name="name" required style="width:100%;"></div>
+    <div><label>業務負責人 AD</label><input name="owner_ad" placeholder="CORP\xxx" style="width:100%;"></div>
+    <div><label>簽核 AD 群組</label><input name="approver_ad_group" placeholder="g_u0X_approvers" style="width:100%;"></div>
+    <div><label>samba 目錄</label><input name="samba_dir" placeholder="architecture" style="width:100%;"></div>
+    <div><label>下載 AD 群組</label><input name="download_ad_group" placeholder="dept_xxx_view" style="width:100%;"></div>
+    <div><label>保留天數</label><input name="retention_days" type="number" value="7" style="width:100%;"></div>
+    <div><label>允許協定</label>
+        <select name="allow_protocols" style="width:100%;">
+            <option>SFTP</option><option>SFTP+FTPS</option><option>FTPS</option>
+        </select>
+    </div>
+    <div style="grid-column:1/-1;">
+        <label>說明</label>
+        <textarea name="description" style="width:100%; min-height:60px;"></textarea>
+    </div>
+    <div style="grid-column:1/-1;">
+        <button type="submit" class="btn btn-primary">建立</button>
+        <a href="{{ url_for('admin.biz_list') }}" class="btn btn-secondary">取消</a>
+    </div>
+</form>
+{% endblock %}

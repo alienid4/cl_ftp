@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}稽核查詢{% endblock %}
+{% block content %}
+<h1>全公司稽核查詢</h1>
+
+<form method="get" class="card" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+    <div>
+        <label>操作者</label>
+        <input type="text" name="actor" value="{{ query.actor or '' }}" style="width:100%;">
+    </div>
+    <div>
+        <label>業務代號</label>
+        <input type="text" name="business_code" value="{{ query.business_code or '' }}" style="width:100%;">
+    </div>
+    <div>
+        <label>事件類型</label>
+        <input type="text" name="event_type" value="{{ query.event_type or '' }}" style="width:100%;">
+    </div>
+    <div>
+        <label>檔名 (支援 *)</label>
+        <input type="text" name="file_pattern" value="{{ query.file_pattern or '' }}" style="width:100%;">
+    </div>
+    <div>
+        <label>來源 IP</label>
+        <input type="text" name="source_ip" value="{{ query.source_ip or '' }}" style="width:100%;">
+    </div>
+    <div style="display:flex; align-items:end;">
+        <button type="submit" class="btn btn-primary">查詢</button>
+    </div>
+</form>
+
+<h2 style="margin-top:20px;">查詢結果 ({{ results|length }})</h2>
+{% if results %}
+<table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <thead>
+        <tr style="border-bottom:2px solid #ccc;">
+            <th style="text-align:left; padding:6px;">時間</th>
+            <th style="text-align:left; padding:6px;">事件</th>
+            <th style="text-align:left; padding:6px;">操作者</th>
+            <th style="text-align:left; padding:6px;">業務</th>
+            <th style="text-align:left; padding:6px;">檔名</th>
+            <th style="padding:6px;">結果</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for r in results %}
+        <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:6px;">{{ r.event_time }}</td>
+            <td style="padding:6px;"><code>{{ r.event_type }}</code></td>
+            <td style="padding:6px;">{{ r.actor_user or '-' }}</td>
+            <td style="padding:6px;">{{ r.business_code or '-' }}</td>
+            <td style="padding:6px;">{{ r.target_file or '-' }}</td>
+            <td style="padding:6px;"><span class="badge">{{ r.result }}</span></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="color:#999;">無查詢結果.</p>
+{% endif %}
+{% endblock %}

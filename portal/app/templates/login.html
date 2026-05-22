@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}登入{% endblock %}
+{% block content %}
+<div style="max-width:420px; margin:60px auto;">
+    <div class="card">
+        <h2 style="margin-top:0;">SF 檔案交換 Portal 登入</h2>
+        <p style="color:#666; font-size:14px;">使用 AD 個人帳號登入 (CORP\xxx)</p>
+
+        <form method="post" action="{{ url_for('auth.login') }}">
+            <div style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:6px;">AD 帳號</label>
+                <input type="text" name="username" required autofocus
+                       placeholder="CORP\your.account"
+                       style="width:100%; padding:10px; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:6px;">密碼</label>
+                <input type="password" name="password" required
+                       style="width:100%; padding:10px; box-sizing:border-box;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">登入</button>
+        </form>
+
+        <p style="margin-top:20px; font-size:12px; color:#999;">
+            ⚠️ 此系統為公司內部使用, 所有操作會被稽核.
+        </p>
+    </div>
+</div>
+{% endblock %}

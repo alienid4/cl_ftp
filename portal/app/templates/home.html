@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}首頁{% endblock %}
+{% block content %}
+<h1>
+    {% if current_user.is_admin %}
+        <span style="color:#c00;">管理員</span>
+    {% else %}
+        我的
+    {% endif %}
+    Dashboard
+</h1>
+
+<p style="color:#666; font-size:14px;">
+    最後登入: {{ now }} | 您的身分: {{ current_user.ad_account }}
+</p>
+
+<div class="card" style="margin-top:20px;">
+    <h3 style="margin-top:0;">系統概要</h3>
+    <p>SF 檔案交換主機目前運作中.</p>
+    {% if current_user.is_admin %}
+    <ul>
+        <li><a href="{{ url_for('admin.biz_list') }}">業務代號管理</a></li>
+        <li><a href="{{ url_for('audit.query_view') }}">稽核查詢</a></li>
+        <li><a href="{{ url_for('admin.health') }}">系統健康</a></li>
+    </ul>
+    {% endif %}
+</div>
+
+{% if pending_batches %}
+<div class="card" style="margin-top:20px;">
+    <h3 style="margin-top:0;">我的待簽 ({{ pending_batches|length }})</h3>
+    <ul>
+    {% for batch in pending_batches %}
+        <li>
+            <a href="{{ url_for('approval.detail_view', batch_id=batch.batch_id) }}">
+                {{ batch.business_name or batch.business_code }} · {{ batch.batch_id }}
+            </a>
+            ({{ batch.file_count }} 檔, {{ batch.total_size }} bytes)
+        </li>
+    {% endfor %}
+    </ul>
+</div>
+{% else %}
+<div class="card" style="margin-top:20px;">
+    <h3 style="margin-top:0;">我的待簽</h3>
+    <p style="color:#999;">目前沒有待簽案件.</p>
+</div>
+{% endif %}
+{% endblock %}

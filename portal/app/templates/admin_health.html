@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}系統健康{% endblock %}
+{% block content %}
+<h1>系統健康</h1>
+
+{% if health and not health.error %}
+<div class="card">
+    <h3 style="margin-top:0;">服務狀態</h3>
+    <ul>
+    {% for svc, info in (health.services or {}).items() %}
+        <li>
+            <b>{{ svc }}:</b>
+            <span style="color: {% if info.status == 'OK' %}#0a0{% else %}#c00{% endif %};">
+                {{ info.status }}
+            </span>
+            {% if info.detail %} — {{ info.detail }}{% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+</div>
+
+<div class="card" style="margin-top:20px;">
+    <h3 style="margin-top:0;">主機資源</h3>
+    <p><b>CPU:</b> {{ health.cpu_pct or '-' }}%</p>
+    <p><b>Memory:</b> {{ health.mem_pct or '-' }}%</p>
+    <p><b>D: 磁碟:</b> {{ health.disk_pct or '-' }}%</p>
+</div>
+
+<div class="card" style="margin-top:20px;">
+    <h3 style="margin-top:0;">原始 JSON</h3>
+    <pre style="background:#f8f8f8; padding:10px; font-size:12px; overflow:auto;">
+{{ health | tojson(indent=2) }}
+    </pre>
+</div>
+
+{% elif health and health.error %}
+<div class="card card-status-error">
+    <h3>無法取得健康資料</h3>
+    <pre>{{ health.error }}</pre>
+    <p style="font-size:13px; color:#666;">
+        提示: health_check.ps1 是 Windows 寫的, 在 Linux 不會跑.
+        若部署在 RHEL, 改寫 shell 版或拿掉本頁的 subprocess 呼叫.
+    </p>
+</div>
+{% else %}
+<p style="color:#999;">健康資料尚未取得.</p>
+{% endif %}
+{% endblock %}
