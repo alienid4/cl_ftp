@@ -177,6 +177,43 @@ v2.0 RHEL bundle: 打 .tar.gz 帶 .rpm → file conflict 連環坑 (10 個 patch
 
 ---
 
+## 鐵律 12: 不知道用問, 不要猜 (USER 2026-05-22 強化)
+
+USER 講: **「不知道用問, 不要猜, 我們可以討論」**
+
+### 為什麼這條會出現
+
+歷史記錄的反例 (我自己犯的):
+
+| 場景 | 我亂猜的後果 | 正確做法 |
+|---|---|---|
+| Step 9 fix_portal Step 9 系統服務跑不起來 | 我猜「全部套件就緒」, USER 後來找出缺 pyodbc / dotenv | 應該先 `grep -r 'import\|from' portal/` 列全部 import 清單給 USER 看 |
+| pip install 套件路徑 /usr vs /usr/local | 我直接做 chmod 認為夠, USER 試完才發現 sys.path 不對 | 應該先問 USER `sudo -u nginx python3 -c "import sys; print(sys.path)"` 確認 |
+| EPEL gunicorn binary 路徑 | 我寫死 `gunicorn-3`, USER 跑才發現是 `gunicorn` | 應該先 `command -v` 找實際 binary |
+| wsgi.py auto-patch | 我假設原版沒 module-level app, 寫 grep regex 又寫錯 (`\s` 在 ERE 不認), 一直誤觸發 patch | 應該先讓 USER `cat wsgi.py` 確認內容 |
+
+### 三條 fallback (從強到弱)
+
+1. **能直接驗證的 → 自己跑 grep / find / ls 看清楚** (不寫測試, 不抽樣, 看全部)
+2. **要 USER 環境才能驗證的 → 寫 1 個診斷指令, 看 USER 結果再決定**
+3. **真的搞不清楚 → 直接問 USER, 給選項或請他描述**
+
+❌ 反例: 「我覺得應該是 X, 直接寫 X」→ 跑去發現是 Y, 又寫 Y → 又錯
+✅ 正例: 「我懷疑是 X 或 Y, 跑這指令確認」→ USER 回 Y → 寫 Y 一發中
+
+### 對應修法
+
+- 跨檔分析 (例如 import 清單): 我自己掃源碼, **掃全部不要抽 1 個檔**
+- 環境相依分析: 寫 note + 1 個 diag 指令給 USER 跑
+- 設計決策 (用 A 還是 B): 直接 AskUserQuestion
+
+### 「我們可以討論」這 5 個字
+
+USER 願意花時間討論, **不是要我自動裝懂或自動推進**.
+寧可多問一輪 (5 秒), 不要錯一輪 (15 分鐘 + USER 困擾).
+
+---
+
 ## 鐵律 8: 每次互動結尾**自我檢查**
 
 提交工作前自問:
