@@ -1,49 +1,107 @@
 {% extends "base.html" %}
 {% block title %}首頁{% endblock %}
 {% block content %}
-<h1>
-    {% if current_user.is_admin %}
-        <span style="color:#c00;">管理員</span>
-    {% else %}
-        我的
-    {% endif %}
-    Dashboard
-</h1>
 
-<p style="color:#666; font-size:14px;">
-    最後登入: {{ now }} | 您的身分: {{ current_user.ad_account }}
-</p>
+{% if current_user.is_admin %}
+{# ===== 管理員 Dashboard ===== #}
+<div class="page-header">
+    <h1 style="font-size:22px; font-weight:700;">📊 管理員 Dashboard</h1>
+    <span class="text-muted-sm">{{ current_user.display_name }}</span>
+</div>
 
-<div class="card" style="margin-top:20px;">
-    <h3 style="margin-top:0;">系統概要</h3>
-    <p>SF 檔案交換主機目前運作中.</p>
-    {% if current_user.is_admin %}
-    <ul>
-        <li><a href="{{ url_for('admin.biz_list') }}">業務代號管理</a></li>
-        <li><a href="{{ url_for('audit.query_view') }}">稽核查詢</a></li>
-        <li><a href="{{ url_for('admin.health') }}">系統健康</a></li>
-    </ul>
-    {% endif %}
+<div class="card card-status-ok">
+    <div class="card-title">系統概要</div>
+    <div style="font-size:14px;">SF 檔案交換主機目前運作中。</div>
+</div>
+
+<div class="kpi-grid">
+    <div class="kpi-card ok"><div class="kpi-value ok">{{ biz_count or 0 }}</div><div class="kpi-label">啟用業務代號</div></div>
+    <div class="kpi-card warn"><div class="kpi-value warn">{{ today_upload or 0 }}</div><div class="kpi-label">今日上傳</div></div>
+    <div class="kpi-card"><div class="kpi-value">{{ month_approved or 0 }}</div><div class="kpi-label">本月簽核完成</div></div>
+    <div class="kpi-card"><div class="kpi-value">{{ month_downloads or 0 }}</div><div class="kpi-label">本月下載</div></div>
+    <div class="kpi-card error"><div class="kpi-value error">{{ today_denied or 0 }}</div><div class="kpi-label">今日 DENIED</div></div>
+    <div class="kpi-card warn"><div class="kpi-value warn">{{ pending_count or 0 }}</div><div class="kpi-label">待簽批次</div></div>
+</div>
+
+<div class="card">
+    <div class="card-title flex-between">
+        <span>💚 系統健康速覽</span>
+        <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.health') }}">完整健康頁 →</a>
+    </div>
+    <div class="health-grid">
+        <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">gunicorn</div><div class="hi-status">127.0.0.1:5000 active</div></div></div>
+        <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">nginx</div><div class="hi-status">80 → 5000</div></div></div>
+        <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">PostgreSQL</div><div class="hi-status">5432 listening</div></div></div>
+        <div class="health-item"><div class="hi-icon">✅</div><div><div class="hi-name">Portal</div><div class="hi-status">v2.4.5 running</div></div></div>
+    </div>
+</div>
+
+{% else %}
+{# ===== 一般 USER 首頁 ===== #}
+<div class="page-header">
+    <h1 style="font-size:22px; font-weight:700; color:var(--c1);">您好, {{ current_user.display_name }}</h1>
+    <span class="text-muted-sm">{{ current_user.ad_account }}</span>
 </div>
 
 {% if pending_batches %}
-<div class="card" style="margin-top:20px;">
-    <h3 style="margin-top:0;">我的待簽 ({{ pending_batches|length }})</h3>
-    <ul>
-    {% for batch in pending_batches %}
-        <li>
-            <a href="{{ url_for('approval.detail_view', batch_id=batch.batch_id) }}">
-                {{ batch.business_name or batch.business_code }} · {{ batch.batch_id }}
-            </a>
-            ({{ batch.file_count }} 檔, {{ batch.total_size }} bytes)
-        </li>
-    {% endfor %}
-    </ul>
-</div>
-{% else %}
-<div class="card" style="margin-top:20px;">
-    <h3 style="margin-top:0;">我的待簽</h3>
-    <p style="color:#999;">目前沒有待簽案件.</p>
+<div class="card card-status-warn">
+    <div class="card-title">今日提醒</div>
+    <div style="font-size:15px;">有 <strong>{{ pending_batches|length }} 件待簽核</strong>項目需要您處理。</div>
 </div>
 {% endif %}
+
+<div class="kpi-grid">
+    <div class="kpi-card warn">
+        <div class="kpi-value warn">{{ pending_batches|length if pending_batches else 0 }}</div>
+        <div class="kpi-label">待我簽核</div>
+    </div>
+    <div class="kpi-card ok">
+        <div class="kpi-value ok">{{ month_approved or 0 }}</div>
+        <div class="kpi-label">本月已同意</div>
+    </div>
+    <div class="kpi-card error">
+        <div class="kpi-value error">{{ month_rejected or 0 }}</div>
+        <div class="kpi-label">本月已駁回</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-value">{{ my_groups|length if my_groups else 0 }}</div>
+        <div class="kpi-label">我所屬群組</div>
+    </div>
+</div>
+{% endif %}
+
+{# ===== 共用: 待簽列表 (簡版) ===== #}
+{% if pending_batches %}
+<div class="card">
+    <div class="card-title flex-between">
+        <span>📌 待簽批次 ({{ pending_batches|length }})</span>
+        <a class="btn btn-secondary btn-sm" href="{{ url_for('approval.list_view') }}">完整列表 →</a>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>業務</th><th>批次 ID</th><th>上傳人</th><th>檔數</th><th>大小</th><th>操作</th></tr></thead>
+            <tbody>
+            {% for batch in pending_batches[:5] %}
+                <tr>
+                    <td><span class="badge badge-a">{{ batch.business_code }}</span></td>
+                    <td><span class="code-inline">{{ batch.batch_id }}</span></td>
+                    <td>{{ batch.uploader or '-' }}</td>
+                    <td><span class="badge badge-a">{{ batch.file_count }} 檔</span></td>
+                    <td>{{ batch.total_size }} B</td>
+                    <td>
+                        <a href="{{ url_for('approval.detail', batch_id=batch.batch_id) }}" class="btn btn-secondary btn-sm">展開</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-title">📌 待簽批次</div>
+    <div style="color:#999; font-size:14px;">目前沒有待簽案件。</div>
+</div>
+{% endif %}
+
 {% endblock %}

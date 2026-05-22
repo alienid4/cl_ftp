@@ -1,40 +1,57 @@
 {% extends "base.html" %}
 {% block title %}業務代號管理{% endblock %}
 {% block content %}
-<h1>業務代號管理 ({{ codes|length }})</h1>
+<div class="page-header">
+    <h1 style="font-size:22px; font-weight:700;">⚙️ 業務代號管理</h1>
+    <a href="{{ url_for('admin.biz_new') }}" class="btn btn-primary">➕ 新增業務代號</a>
+</div>
 
-<a href="{{ url_for('admin.biz_new') }}" class="btn btn-primary" style="margin-bottom:20px;">+ 新增業務代號</a>
+<div class="card card-status-ok">
+    <div class="card-title">說明</div>
+    <div style="font-size:14px;">業務代號 (u01, u02...) 是 SF 上的本機帳號, 給 SFTP 上傳用。每個對應 1 個 AD 群組 (簽核人) 與 1 個 OA samba 目錄。新增後請通知 PAM 管理員納管。</div>
+</div>
 
-{% if codes %}
-<table style="width:100%; border-collapse:collapse;">
-    <thead>
-        <tr style="border-bottom:2px solid #ccc;">
-            <th style="text-align:left; padding:8px;">代號</th>
-            <th style="text-align:left; padding:8px;">名稱</th>
-            <th style="text-align:left; padding:8px;">業務負責人</th>
-            <th style="text-align:left; padding:8px;">簽核群組</th>
-            <th style="text-align:left; padding:8px;">samba 路徑</th>
-            <th style="padding:8px;">啟用</th>
-            <th style="padding:8px;">操作</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for bc in codes %}
-        <tr style="border-bottom:1px solid #eee;">
-            <td style="padding:8px;"><code>{{ bc.code }}</code></td>
-            <td style="padding:8px;">{{ bc.name }}</td>
-            <td style="padding:8px;">{{ bc.owner_ad }}</td>
-            <td style="padding:8px;"><code>{{ bc.approver_ad_group }}</code></td>
-            <td style="padding:8px;">{{ bc.samba_dir }}</td>
-            <td style="padding:8px; text-align:center;">{% if bc.is_active %}✅{% else %}❌{% endif %}</td>
-            <td style="padding:8px;">
-                <a href="{{ url_for('admin.biz_edit', code=bc.code) }}" class="btn btn-secondary btn-sm">編輯</a>
-            </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p style="color:#999;">尚未建立任何業務代號.</p>
-{% endif %}
+<div class="card">
+    <div class="card-title">業務代號清單 ({{ codes|length }} 筆)</div>
+    {% if codes %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>代號</th>
+                    <th>業務名稱</th>
+                    <th>負責人</th>
+                    <th>簽核 AD 群組</th>
+                    <th>samba 目錄</th>
+                    <th>狀態</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for bc in codes %}
+                <tr {% if not bc.is_active %}style="opacity:0.5;"{% endif %}>
+                    <td><strong><span class="code-inline">{{ bc.code }}</span></strong></td>
+                    <td>{{ bc.name or '-' }}</td>
+                    <td>{{ bc.owner_ad or '-' }}</td>
+                    <td><span class="code-inline">{{ bc.approver_ad_group or '-' }}</span></td>
+                    <td><span class="code-inline">{{ bc.samba_dir or '-' }}</span></td>
+                    <td>
+                        {% if bc.is_active %}
+                            <span class="badge badge-ok">啟用</span>
+                        {% else %}
+                            <span class="badge badge-error">停用</span>
+                        {% endif %}
+                    </td>
+                    <td style="white-space:nowrap;">
+                        <a href="{{ url_for('admin.biz_edit', code=bc.code) }}" class="btn btn-secondary btn-sm">編輯</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="color:#999; padding:20px; text-align:center;">尚未建立任何業務代號。點上方「➕ 新增業務代號」開始。</div>
+    {% endif %}
+</div>
 {% endblock %}

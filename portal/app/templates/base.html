@@ -5,20 +5,24 @@
 <title>{% block title %}SF Portal{% endblock %} · 中繼檔案交換</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/cathay.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/mockup-extra.css') }}">
+{% if current_user.is_authenticated and current_user.is_admin %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endif %}
 {% block extra_head %}{% endblock %}
 </head>
 <body>
 
 <nav class="navbar">
     <a class="navbar-brand" href="{{ url_for('main.home') }}">
-        <span class="dot"></span> SF 檔案交換 Portal
+        <span class="dot" {% if current_user.is_authenticated and current_user.is_admin %}style="background:var(--orange);"{% endif %}></span>
+        SF 檔案交換 Portal{% if current_user.is_authenticated and current_user.is_admin %} · 管理員{% endif %}
     </a>
     {% if current_user.is_authenticated %}
     <ul class="nav-links">
         <li><a href="{{ url_for('main.home') }}">📊 首頁</a></li>
         <li><a href="{{ url_for('approval.list_view') }}">📝 我的待簽</a></li>
         {% if current_user.is_admin %}
-        <li><a href="{{ url_for('admin.biz_list') }}">⚙️ 業務代號</a></li>
+        <li><a href="{{ url_for('admin.biz_list') }}">⚙️ 業務管理</a></li>
         <li><a href="{{ url_for('audit.query_view') }}">🔍 稽核</a></li>
         <li><a href="{{ url_for('admin.health') }}">💚 健康</a></li>
         {% endif %}
@@ -40,7 +44,7 @@
 
 {% if current_user.is_authenticated and current_user.is_admin %}
 <div class="admin-warning-bar">
-    🛡️ 您目前以「管理員」身分登入 — 所有操作會被稽核
+    🛡️ 您目前以「管理員」身分登入, 可看到全公司資料與系統狀態 — <strong>所有操作會被稽核</strong>
 </div>
 {% endif %}
 
@@ -58,9 +62,8 @@
     {% block content %}{% endblock %}
 </div>
 
-<div class="version-info">
-    <div><span class="v-num">v1.0.0</span> · SF Portal</div>
-    <div class="v-time">{{ now }}</div>
+<div class="version-info{% if current_user.is_authenticated and current_user.is_admin %} admin{% endif %}">
+    <div><span class="v-num">v1.0.0</span> · SF Portal{% if current_user.is_authenticated and current_user.is_admin %} · 🛡️ 管理員介面{% endif %}</div>
 </div>
 
 {% block extra_scripts %}{% endblock %}

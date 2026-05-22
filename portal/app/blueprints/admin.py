@@ -20,8 +20,14 @@ def admin_required():
 @login_required
 def biz_list():
     admin_required()
-    codes = get_business_codes(active_only=False)
-    return render_template('admin_biz_list.html', codes=codes)
+    try:
+        codes = get_business_codes(active_only=False)
+    except Exception as e:
+        from flask import current_app
+        current_app.logger.exception('[ADMIN] biz_list 撈業務代號失敗')
+        flash(f'撈業務代號失敗: {e}', 'error')
+        codes = []
+    return render_template('admin_biz_list.html', codes=codes or [])
 
 
 @admin_bp.route('/biz/new', methods=['GET', 'POST'])
@@ -110,16 +116,80 @@ def biz_edit(code):
 @admin_bp.route('/health')
 @login_required
 def health():
-    """系統健康 (從 health_check.ps1 抓 JSON)"""
+    """系統健康 — Linux 版, 用 systemctl + /proc + psql 撈"""
     admin_required()
     import subprocess
-    import json
+    import shutil
+
+    services = []
+    for svc in ('sf-portal', 'nginx', 'postgresql', 'firewalld'):
+        try:
+            r = subprocess.run(['systemctl', 'is-active', svc],
+                               capture_output=True, text=True, timeout=3)
+            status_text = r.stdout.strip()
+            status = 'OK' if status_text == 'active' else 'FAIL'
+            services.append({'name': svc, 'status': status, 'detail': status_text})
+        except Exception as e:
+            services.append({'name': svc, 'status': 'FAIL', 'detail': str(e)})
+
+    # 主機資源 (從 /proc)
+    cpu_pct = mem_pct = disk_pct = None
+    uptime = None
     try:
-        result = subprocess.run(
-            ['powershell.exe', '-File', r'C:\ClaudeHome\SFTP\scripts\health_check.ps1', '-Json'],
-            capture_output=True, text=True, timeout=30
-        )
-        health_data = json.loads(result.stdout) if result.returncode == 0 else None
+        with open('/proc/loadavg') as f:
+            load1 = float(f.read().split()[0])
+        # 粗估 cpu_pct 用 load1 / cpu_count
+        import os as _os
+        cpu_count = _os.cpu_count() or 1
+        cpu_pct = min(int(load1 / cpu_count * 100), 100)
+    except Exception:
+        pass
+
+    try:
+        with open('/proc/meminfo') as f:
+            mem = {}
+            for line in f:
+                k, v = line.split(':', 1)
+                mem[k] = int(v.strip().split()[0])
+        total = mem.get('MemTotal', 0)
+        avail = mem.get('MemAvailable', 0)
+        if total > 0:
+            mem_pct = int((total - avail) / total * 100)
+    except Exception:
+        pass
+
+    try:
+        s = shutil.disk_usage('/')
+        disk_pct = int(s.used / s.total * 100)
+    except Exception:
+        pass
+
+    try:
+        with open('/proc/uptime') as f:
+            secs = float(f.read().split()[0])
+        days = int(secs // 86400)
+        hours = int((secs % 86400) // 3600)
+        uptime = f'{days}d {hours}h'
+    except Exception:
+        pass
+
+    # DB 統計
+    audit_count = biz_count = batch_count = None
+    error = None
+    try:
+        from ..db import query_one
+        r = query_one("SELECT count(*) AS c FROM AuditLog")
+        audit_count = r['c'] if r else 0
+        r = query_one("SELECT count(*) AS c FROM BusinessCode")
+        biz_count = r['c'] if r else 0
+        r = query_one("SELECT count(*) AS c FROM Batch")
+        batch_count = r['c'] if r else 0
     except Exception as e:
-        health_data = {'error': str(e)}
-    return render_template('admin_health.html', health=health_data)
+        error = f'DB 查詢失敗: {e}'
+
+    return render_template('admin_health.html',
+                           services=services,
+                           cpu_pct=cpu_pct, mem_pct=mem_pct, disk_pct=disk_pct,
+                           uptime=uptime,
+                           audit_count=audit_count, biz_count=biz_count, batch_count=batch_count,
+                           error=error)

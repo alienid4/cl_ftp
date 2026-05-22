@@ -1,48 +1,62 @@
 {% extends "base.html" %}
 {% block title %}系統健康{% endblock %}
 {% block content %}
-<h1>系統健康</h1>
+<div class="page-header">
+    <h1 style="font-size:22px; font-weight:700;">💚 系統健康</h1>
+</div>
 
-{% if health and not health.error %}
 <div class="card">
-    <h3 style="margin-top:0;">服務狀態</h3>
-    <ul>
-    {% for svc, info in (health.services or {}).items() %}
-        <li>
-            <b>{{ svc }}:</b>
-            <span style="color: {% if info.status == 'OK' %}#0a0{% else %}#c00{% endif %};">
-                {{ info.status }}
-            </span>
-            {% if info.detail %} — {{ info.detail }}{% endif %}
-        </li>
-    {% endfor %}
-    </ul>
+    <div class="card-title">核心服務狀態</div>
+    <div class="health-grid">
+        {% for svc in services %}
+        <div class="health-item{% if svc.status != 'OK' %} {{ 'warn' if svc.status == 'WARN' else '' }}{% endif %}">
+            <div class="hi-icon">{% if svc.status == 'OK' %}✅{% elif svc.status == 'WARN' %}⚠️{% else %}❌{% endif %}</div>
+            <div>
+                <div class="hi-name">{{ svc.name }}</div>
+                <div class="hi-status">{{ svc.detail or '-' }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 
-<div class="card" style="margin-top:20px;">
-    <h3 style="margin-top:0;">主機資源</h3>
-    <p><b>CPU:</b> {{ health.cpu_pct or '-' }}%</p>
-    <p><b>Memory:</b> {{ health.mem_pct or '-' }}%</p>
-    <p><b>D: 磁碟:</b> {{ health.disk_pct or '-' }}%</p>
+<div class="card">
+    <div class="card-title">主機資源</div>
+    <div class="kpi-grid">
+        <div class="kpi-card{% if cpu_pct and cpu_pct > 80 %} warn{% endif %}">
+            <div class="kpi-value{% if cpu_pct and cpu_pct > 80 %} warn{% endif %}">{{ cpu_pct or '-' }}%</div>
+            <div class="kpi-label">CPU</div>
+        </div>
+        <div class="kpi-card{% if mem_pct and mem_pct > 90 %} error{% endif %}">
+            <div class="kpi-value{% if mem_pct and mem_pct > 90 %} error{% endif %}">{{ mem_pct or '-' }}%</div>
+            <div class="kpi-label">Memory</div>
+        </div>
+        <div class="kpi-card{% if disk_pct and disk_pct > 80 %} warn{% endif %}">
+            <div class="kpi-value{% if disk_pct and disk_pct > 80 %} warn{% endif %}">{{ disk_pct or '-' }}%</div>
+            <div class="kpi-label">磁碟 /</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">{{ uptime or '-' }}</div>
+            <div class="kpi-label">Uptime</div>
+        </div>
+    </div>
 </div>
 
-<div class="card" style="margin-top:20px;">
-    <h3 style="margin-top:0;">原始 JSON</h3>
-    <pre style="background:#f8f8f8; padding:10px; font-size:12px; overflow:auto;">
-{{ health | tojson(indent=2) }}
-    </pre>
+{% if audit_count is not none %}
+<div class="card">
+    <div class="card-title">資料庫</div>
+    <div style="font-size:14px;">
+        <p>AuditLog 累計: <strong>{{ audit_count }}</strong> 筆</p>
+        <p>業務代號: <strong>{{ biz_count }}</strong> 個</p>
+        <p>批次: <strong>{{ batch_count }}</strong> 筆</p>
+    </div>
 </div>
+{% endif %}
 
-{% elif health and health.error %}
+{% if error %}
 <div class="card card-status-error">
-    <h3>無法取得健康資料</h3>
-    <pre>{{ health.error }}</pre>
-    <p style="font-size:13px; color:#666;">
-        提示: health_check.ps1 是 Windows 寫的, 在 Linux 不會跑.
-        若部署在 RHEL, 改寫 shell 版或拿掉本頁的 subprocess 呼叫.
-    </p>
+    <div class="card-title">⚠️ 部分資料取得失敗</div>
+    <pre style="font-size:12px; color:#900;">{{ error }}</pre>
 </div>
-{% else %}
-<p style="color:#999;">健康資料尚未取得.</p>
 {% endif %}
 {% endblock %}
