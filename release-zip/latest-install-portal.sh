@@ -25,7 +25,7 @@
 
 set -uo pipefail   # 不要 set -e — 各 step 自己處理錯誤
 
-VERSION="install_portal_all_in_one v2.3.6 (2026-05-22)"
+VERSION="install_portal_all_in_one v2.3.7 (2026-05-22)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -165,7 +165,7 @@ for d in "${PORTAL_SRC_CANDIDATES[@]}"; do
     fi
 done
 
-# Fallback: 動態 find wsgi.py 所在目錄 (有 app/ 子目錄的才算 portal)
+# Fallback 1: 動態 find wsgi.py 所在目錄 (有 app/ 子目錄的才算 portal)
 if [[ -z "$PORTAL_SRC" ]]; then
     info "候選路徑都沒有, 動態 find wsgi.py ..."
     while IFS= read -r wsgi_file; do
@@ -178,11 +178,38 @@ if [[ -z "$PORTAL_SRC" ]]; then
     done < <(find /tmp /opt /root /home -maxdepth 6 -name 'wsgi.py' -type f 2>/dev/null)
 fi
 
+# Fallback 2: 找 sf-portal-source*.tar.gz / portal.tar.gz / portal.zip 解壓
+if [[ -z "$PORTAL_SRC" ]]; then
+    info "wsgi.py 沒找到, 找 portal source 壓縮包 ..."
+    PORTAL_TAR=$(find /tmp /opt /root -maxdepth 5 \( -name 'sf-portal-source*.tar.gz' -o -name 'portal*.tar.gz' -o -name 'portal.zip' \) -type f 2>/dev/null | head -1)
+    if [[ -n "$PORTAL_TAR" ]]; then
+        info "找到 portal 壓縮包: $PORTAL_TAR, 解壓到 /tmp/sf-portal-extracted/"
+        rm -rf /tmp/sf-portal-extracted
+        mkdir -p /tmp/sf-portal-extracted
+        case "$PORTAL_TAR" in
+            *.tar.gz) tar xzf "$PORTAL_TAR" -C /tmp/sf-portal-extracted ;;
+            *.zip) unzip -oq "$PORTAL_TAR" -d /tmp/sf-portal-extracted ;;
+        esac
+        # tar 內可能是 portal/ 也可能直接是 wsgi.py
+        if [[ -d /tmp/sf-portal-extracted/portal ]]; then
+            PORTAL_SRC="/tmp/sf-portal-extracted/portal"
+        else
+            PORTAL_SRC="/tmp/sf-portal-extracted"
+        fi
+        if [[ -f "$PORTAL_SRC/wsgi.py" ]] || [[ -d "$PORTAL_SRC/app" ]]; then
+            ok "Portal source (extracted): $PORTAL_SRC"
+        else
+            warn "壓縮包解開後沒 wsgi.py / app/"
+            PORTAL_SRC=""
+        fi
+    fi
+fi
+
 if [[ -z "$PORTAL_SRC" ]]; then
     warn "找不到 portal source"
     warn "  候選路徑: ${PORTAL_SRC_CANDIDATES[*]}"
-    warn "  動態 find /tmp /opt /root /home -name 'wsgi.py' 也沒"
-    MISSING_FILES+=("portal/ source 目錄 (含 wsgi.py + app/)")
+    warn "  也沒 wsgi.py / portal.tar.gz / portal.zip"
+    MISSING_FILES+=("portal/ source 目錄 (含 wsgi.py + app/) 或 portal*.tar.gz")
 fi
 
 if [[ ${#MISSING_FILES[@]} -gt 0 ]]; then
