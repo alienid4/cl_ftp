@@ -25,7 +25,7 @@
 # 各 step 自己用 || warn 處理錯誤
 set -uo pipefail
 
-VERSION="fix_portal v2.2.5 (2026-05-21)"
+VERSION="fix_portal v2.2.6 (2026-05-22)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -226,6 +226,52 @@ else
 
 或從以下任一位置放:
 $(printf '   - %s\n' "${PORTAL_SRC_CANDIDATES[@]}")"
+fi
+
+# === Patch wsgi.py 確保有 module-level `app` (gunicorn import 用) ===
+WSGI_FILE="/opt/portal/app/wsgi.py"
+if [[ -f "$WSGI_FILE" ]]; then
+    # 找 module-level (非縮排) "app = " 賦值
+    if ! grep -qE '^app *= *create_app' "$WSGI_FILE"; then
+        warn "wsgi.py 沒有 module-level 'app' (Windows waitress 版?), 自動 patch"
+        cp "$WSGI_FILE" "$WSGI_FILE.bak.$(date +%Y%m%d_%H%M%S)"
+
+        cat > "$WSGI_FILE" <<'WSGI_EOF'
+"""
+SF Portal — WSGI Entry Point (auto-patched by fix_portal.sh)
+Linux + gunicorn: import wsgi:app
+"""
+from app import create_app
+
+app = create_app()
+
+if __name__ == '__main__':
+    try:
+        from waitress import serve
+        serve(app, host='127.0.0.1', port=5000, threads=8)
+    except ImportError:
+        app.run(host='127.0.0.1', port=5000, debug=False)
+WSGI_EOF
+        chown "$RUN_USER:$RUN_USER" "$WSGI_FILE"
+        ok "wsgi.py patched (備份在 $WSGI_FILE.bak.*)"
+    else
+        ok "wsgi.py 已是 gunicorn-friendly (module-level app)"
+    fi
+fi
+
+# 確認 import 通 (在跑 gunicorn 前先測, 失敗早點抓到)
+echo "[exec] 測 wsgi:app 能不能 import ..."
+if sudo -u "$RUN_USER" /usr/bin/python3 -c "
+import sys
+sys.path.insert(0, '/opt/portal/app')
+import wsgi
+assert hasattr(wsgi, 'app'), 'wsgi has no app attribute'
+print('OK: wsgi.app =', type(wsgi.app).__name__)
+" 2>&1; then
+    ok "wsgi:app 可以 import"
+else
+    warn "wsgi:app import 失敗 — 看上方 Python traceback"
+    warn "gunicorn 啟動可能會失敗, 但繼續往下試"
 fi
 
 # 用 nginx user 跑 (跟 nginx 同 uid 較簡單; 也可改 sf-portal)
