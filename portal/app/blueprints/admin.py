@@ -69,10 +69,18 @@ def biz_new():
 @admin_bp.route('/biz/<code>/edit', methods=['GET', 'POST'])
 @login_required
 def biz_edit(code):
+    from flask import current_app
     admin_required()
-    bc = get_business_code(code)
+    try:
+        bc = get_business_code(code)
+    except Exception as e:
+        current_app.logger.exception('[ADMIN] biz_edit get_business_code 失敗')
+        flash(f'撈業務代號失敗: {e}', 'error')
+        return redirect(url_for('admin.biz_list'))
+
     if not bc:
-        abort(404)
+        flash(f'找不到業務代號 {code}', 'error')
+        return redirect(url_for('admin.biz_list'))
 
     if request.method == 'POST':
         new_path = request.form.get('new_samba_dir', '').strip()
@@ -106,10 +114,13 @@ def biz_edit(code):
 
         return redirect(url_for('admin.biz_list'))
 
-    path_history = query(
-        "SELECT * FROM SambaPathHistory WHERE business_code = ? ORDER BY changed_at DESC",
-        (code,)
-    )
+    try:
+        path_history = query(
+            "SELECT * FROM SambaPathHistory WHERE business_code = ? ORDER BY changed_at DESC",
+            (code,)
+        ) or []
+    except Exception:
+        path_history = []
     return render_template('admin_biz_edit.html', bc=bc, path_history=path_history)
 
 
