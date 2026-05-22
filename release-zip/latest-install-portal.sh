@@ -25,7 +25,7 @@
 
 set -uo pipefail   # 不要 set -e — 各 step 自己處理錯誤
 
-VERSION="install_portal_all_in_one v2.3.3 (2026-05-22)"
+VERSION="install_portal_all_in_one v2.3.4 (2026-05-22)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -162,13 +162,16 @@ fi
 ok "全部檔案找齊"
 
 # === Step 2: dnf install RHEL Python 依賴 (走 Satellite) ===
-step "Step 2: 裝 RHEL AppStream Python 套件"
+step "Step 2: 裝 RHEL AppStream 套件 (Python + nginx + postgresql + firewalld)"
 
 dnf install -y \
     python3 \
     python3-psycopg2 python3-cryptography python3-requests \
     python3-jinja2 python3-packaging python3-pyasn1 \
-    python3-six python3-setuptools unzip 2>&1 | tail -5
+    python3-six python3-setuptools unzip \
+    nginx \
+    postgresql postgresql-server postgresql-contrib \
+    firewalld policycoreutils-python-utils 2>&1 | tail -10
 
 for mod in psycopg2 cryptography jinja2; do
     if /usr/bin/python3 -c "import $mod" 2>/dev/null; then
@@ -177,6 +180,25 @@ for mod in psycopg2 cryptography jinja2; do
         warn "import $mod 失敗"
     fi
 done
+
+# === Step 2a: 初始化 PostgreSQL (如果還沒) ===
+if [[ ! -f /var/lib/pgsql/data/PG_VERSION ]]; then
+    info "PostgreSQL 還沒 initdb, 跑 postgresql-setup --initdb"
+    /usr/bin/postgresql-setup --initdb 2>&1 | tail -3 || warn "initdb 失敗"
+fi
+
+systemctl enable --now postgresql 2>&1 | tail -2 || warn "postgresql enable 失敗"
+sleep 2
+if systemctl is-active postgresql &>/dev/null; then
+    ok "postgresql active"
+else
+    fail "postgresql 沒起來, 看 journalctl -u postgresql"
+fi
+
+# === Step 2b: 啟 nginx + firewalld ===
+systemctl enable --now firewalld 2>&1 | tail -2 || warn "firewalld 啟動失敗"
+systemctl enable --now nginx 2>&1 | tail -2 || warn "nginx 啟動失敗"
+ok "nginx / firewalld 啟動"
 
 # === Step 3: 裝 EPEL RPM (rpm -Uvh --force, 跳過 GPG check) ===
 step "Step 3: 裝 EPEL Python RPM (rpm -Uvh --force --nodeps)"
@@ -390,13 +412,62 @@ ok "sf-portal.service 寫入"
 
 systemctl daemon-reload
 
-# === Step 8: 防火牆 ===
-step "Step 8: 防火牆放行 http (80)"
+# === Step 8: nginx 反代 + 防火牆 ===
+step "Step 8: nginx 反代 80 → 5000 + 防火牆放行"
 
+# 寫 nginx 反代設定 (如果還沒)
+NGINX_CONF="/etc/nginx/conf.d/sf-portal.conf"
+if [[ ! -f "$NGINX_CONF" ]]; then
+    # 移掉 default server 避免衝突
+    sed -i 's|listen       80 default_server;|listen       80;|' /etc/nginx/nginx.conf 2>/dev/null || true
+
+    cat > "$NGINX_CONF" <<'EOF'
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    access_log /var/log/nginx/sf-portal-access.log;
+    error_log  /var/log/nginx/sf-portal-error.log;
+
+    client_max_body_size 500M;
+
+    location / {
+        proxy_pass         http://127.0.0.1:5000;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 75s;
+    }
+}
+EOF
+    ok "nginx 反代設定寫入 $NGINX_CONF"
+else
+    ok "nginx 反代設定已存在 $NGINX_CONF"
+fi
+
+# 測 + reload nginx
+if nginx -t 2>&1 | grep -q 'syntax is ok'; then
+    systemctl reload nginx 2>&1 | tail -2 || true
+    ok "nginx reload"
+else
+    warn "nginx config 有問題:"
+    nginx -t 2>&1 | tail -3
+fi
+
+# 防火牆
 if systemctl is-active firewalld &>/dev/null; then
     firewall-cmd --permanent --add-service=http 2>&1 | tail -2 || true
     firewall-cmd --reload 2>&1 | tail -2 || true
     ok "防火牆放行 80"
+fi
+
+# SELinux: 允許 nginx 連 5000
+if command -v setsebool &>/dev/null && getenforce 2>/dev/null | grep -q Enforcing; then
+    setsebool -P httpd_can_network_connect on 2>&1 | tail -2 || warn "SELinux setsebool 失敗"
+    ok "SELinux: httpd_can_network_connect=on"
 fi
 
 # === Step 9: 啟動 + 驗證 ===
@@ -423,12 +494,16 @@ done
 echo ""
 if $PORTAL_OK; then
     MAIN_IP=$(ip -4 addr | grep -E 'inet ' | grep -v '127.0.0.1' | head -1 | awk '{print $2}' | cut -d/ -f1)
+
+    # 順便驗 nginx 80 通不通
+    NGINX_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 http://localhost/ 2>/dev/null || echo 000)
+
     echo -e "${BOLD}${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${BOLD}${GREEN}║   ✅ Portal 部署完成                                          ║${NC}"
     echo -e "${BOLD}${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo "  訪問: http://$MAIN_IP/"
-    echo "  Direct: http://$MAIN_IP:5000/"
+    echo "  Portal (給 USER 用)   : http://$MAIN_IP/        (nginx 反代, HTTP $NGINX_CODE)"
+    echo "  Portal (debug 直連)   : http://$MAIN_IP:5000/"
     echo ""
     echo "  systemctl status sf-portal"
     echo "  journalctl -u sf-portal -f"
