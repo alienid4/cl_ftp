@@ -212,6 +212,34 @@ USER 講: **「不知道用問, 不要猜, 我們可以討論」**
 USER 願意花時間討論, **不是要我自動裝懂或自動推進**.
 寧可多問一輪 (5 秒), 不要錯一輪 (15 分鐘 + USER 困擾).
 
+### 鐵律 12.1: 移植 / 部署前**先做完整 pre-flight**, 一次列完所有問題 (USER 2026-05-22 加強)
+
+USER 反饋: v2.2.0 → v2.3.9 我每次只修一個錯, USER 跑一次才看到下一個。低級錯誤多次出現。
+
+**移植 / 跨環境部署前**, 必須先做這 5 個 pre-flight 掃描, 一次列完:
+
+1. **Import 全掃**: `grep -rhE '^(from |import )' <source>/` — 列所有 import 模組
+2. **逐模組驗證**: 每個 import 屬於哪? (std lib / RHEL 套件 / EPEL / PyPI wheel / Windows-only / MSSQL-only)
+3. **Binary 路徑驗**: 寫 systemd unit 之前 `command -v <bin>` 確認真實路徑
+4. **sys.path 驗**: pip / wheel 裝完, **不只 root, 用 sudo -u <service-user>** 驗 `python3 -c "import X"`
+5. **套件名衝突檢查**: PyPI 同名套件 / 系統 vs 第三方 同 import target, 用 `python3 -c "import X; print(X.__file__); print(dir(X))"` 驗到底載到哪個
+
+**列在一張表**, 給 USER 看「全部缺什麼」, 一次補完。**不是一個個修。**
+
+❌ 反例 (v2.2.0 → v2.3.9 我犯的)
+- 看 __init__.py 報 ModuleNotFoundError → 補 flask_login → reload
+- 又報 flask_session → 補 → reload
+- 又報 cachelib → 補 → reload  
+- 又報 dotenv → 補 → reload
+- 又報 pyodbc → 重寫 db.py → reload
+- ... (8 次 iteration, 每次都讓 USER 跑+ scp + 跑 + 看 error)
+
+✅ 正例 (應該做的)
+- 第一次: 全掃 portal/ 列 14 個 external imports
+- 分類: 6 個 std lib / 3 個 EPEL / 4 個 PyPI / 1 個 MSSQL 殘留
+- 一次告訴 USER: 缺 4 wheels + 要重寫 db.py
+- USER 一次抓齊, 一次跑完, 一次成功
+
 ---
 
 ## 鐵律 8: 每次互動結尾**自我檢查**
