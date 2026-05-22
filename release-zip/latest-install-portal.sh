@@ -25,7 +25,7 @@
 
 set -uo pipefail   # 不要 set -e — 各 step 自己處理錯誤
 
-VERSION="install_portal_all_in_one v2.3.7 (2026-05-22)"
+VERSION="install_portal_all_in_one v2.3.8 (2026-05-22)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -122,11 +122,12 @@ REQUIRED_RPMS=(
     "python3-ldap3-*.rpm"
 )
 
-# 3 個 PyPI wheel
+# 4 個 PyPI wheel (v2.3.8 加 python_dotenv)
 REQUIRED_WHEELS=(
     "Flask_Login-*.whl"
     "cachelib-*.whl"
     "flask_session-*.whl"
+    "python_dotenv-*.whl"
 )
 
 declare -A FOUND_RPMS
@@ -295,6 +296,8 @@ rm -rf /usr/local/lib/python3.9/site-packages/flask_login* 2>/dev/null
 rm -rf /usr/local/lib/python3.9/site-packages/flask_session* 2>/dev/null
 rm -rf /usr/local/lib/python3.9/site-packages/cachelib* 2>/dev/null
 rm -rf /usr/local/lib/python3.9/site-packages/Flask_Login* 2>/dev/null
+rm -rf /usr/local/lib/python3.9/site-packages/dotenv* 2>/dev/null
+rm -rf /usr/local/lib/python3.9/site-packages/python_dotenv* 2>/dev/null
 
 for pat in "${REQUIRED_WHEELS[@]}"; do
     whl="${FOUND_WHEELS[$pat]:-}"
@@ -303,7 +306,7 @@ for pat in "${REQUIRED_WHEELS[@]}"; do
     unzip -o -q "$whl" -d "$SITE_PACKAGES/" 2>&1 | tail -3 || warn "unzip $whl 失敗"
 done
 
-for mod in flask_login flask_session cachelib; do
+for mod in flask_login flask_session cachelib dotenv; do
     if /usr/bin/python3 -c "import $mod" 2>/dev/null; then
         ok "import $mod OK (來自 wheel)"
     else

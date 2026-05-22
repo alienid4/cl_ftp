@@ -1,16 +1,44 @@
 """
-SF Portal — DB Helper (pyodbc)
-所有 SQL 走這層, 不要散落到 blueprints。
+SF Portal — DB Helper (psycopg2 / PostgreSQL)
+
+歷史背景:
+    原版用 pyodbc + MSSQL (SCOPE_IDENTITY / SYSUTCDATETIME / `?` placeholder)
+    2026-05-22 改為 psycopg2 + PostgreSQL, caller 介面不變 (`?` 跟
+    SYSUTCDATETIME() 仍可用), 由本層自動翻譯.
 """
-import pyodbc
+import re
+import psycopg2
+import psycopg2.extras
 from contextlib import contextmanager
 from flask import current_app
 
 
+# ===== SQL 翻譯層 (MSSQL → PostgreSQL) =====
+
+def _translate_sql(sql: str) -> str:
+    """MSSQL → PostgreSQL 語法翻譯
+
+    - `?` placeholder → `%s` (psycopg2 標準)
+    - `SYSUTCDATETIME()` → `(NOW() AT TIME ZONE 'UTC')`
+    - `SCOPE_IDENTITY()` 處理 → execute_returning_id 自己加 RETURNING
+    """
+    # 1. ? → %s (但要小心: 已是 %s 的不要轉雙重)
+    # psycopg2 用 %s 但其實 % 在 SQL 字面意義也存在 (例如 LIKE '%foo%')
+    # 為避免衝突, 只在 ? 出現時換成 %s
+    sql = re.sub(r'\?', '%s', sql)
+    # 2. SYSUTCDATETIME() → (NOW() AT TIME ZONE 'UTC')
+    sql = re.sub(r'\bSYSUTCDATETIME\(\)', "(NOW() AT TIME ZONE 'UTC')", sql, flags=re.IGNORECASE)
+    return sql
+
+
+# ===== Connection helper =====
+
 @contextmanager
 def get_conn():
-    """取得 DB 連線 (context manager, 自動關閉)"""
-    conn = pyodbc.connect(current_app.config['DB_CONNECTION_STRING'], autocommit=False)
+    """取得 DB 連線 (context manager, 自動 commit/rollback/close)"""
+    dsn = current_app.config['DB_CONNECTION_STRING']
+    conn = psycopg2.connect(dsn)
+    conn.autocommit = False
     try:
         yield conn
         conn.commit()
@@ -21,16 +49,23 @@ def get_conn():
         conn.close()
 
 
-def query(sql: str, params: tuple = None) -> list[dict]:
+def _dict_cursor(conn):
+    """回傳會吐 dict 的 cursor (psycopg2.extras.RealDictCursor)"""
+    return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+
+# ===== 共用低階 API (跟原 db.py 介面同) =====
+
+def query(sql: str, params: tuple = None) -> list:
     """執行 SELECT, 回傳 list of dict"""
+    sql_pg = _translate_sql(sql)
     with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, params or ())
-        cols = [c[0] for c in cur.description] if cur.description else []
-        return [dict(zip(cols, row)) for row in cur.fetchall()]
+        cur = _dict_cursor(conn)
+        cur.execute(sql_pg, params or ())
+        return [dict(row) for row in cur.fetchall()]
 
 
-def query_one(sql: str, params: tuple = None) -> dict | None:
+def query_one(sql: str, params: tuple = None):
     """執行 SELECT, 回傳第一筆 dict 或 None"""
     rows = query(sql, params)
     return rows[0] if rows else None
@@ -38,24 +73,35 @@ def query_one(sql: str, params: tuple = None) -> dict | None:
 
 def execute(sql: str, params: tuple = None) -> int:
     """執行 INSERT/UPDATE/DELETE, 回傳 rowcount"""
+    sql_pg = _translate_sql(sql)
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute(sql, params or ())
+        cur.execute(sql_pg, params or ())
         return cur.rowcount
 
 
 def execute_returning_id(sql: str, params: tuple = None) -> int:
-    """執行 INSERT 並回傳新建立的 id (假設用 SCOPE_IDENTITY())"""
+    """執行 INSERT 並回傳新建立的 id
+
+    原 MSSQL 寫法是 caller 在 SQL 內帶 SCOPE_IDENTITY().
+    PostgreSQL 用 RETURNING id, 本 function 自動加.
+    """
+    sql_pg = _translate_sql(sql)
+    # 自動加 RETURNING id (如果 caller 沒加)
+    if 'RETURNING' not in sql_pg.upper():
+        sql_pg = sql_pg.rstrip(';').rstrip() + ' RETURNING id'
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute(sql + '; SELECT SCOPE_IDENTITY() AS new_id;', params or ())
-        cur.nextset()
+        cur.execute(sql_pg, params or ())
         row = cur.fetchone()
         return int(row[0]) if row else 0
 
 
-# ===== 共用 query 函式 =====
-def get_business_codes(active_only: bool = True) -> list[dict]:
+# ===== Schema-level helpers (對應原 db.py) =====
+# 注意: 假設 schema 用 INTEGER 0/1 表示 boolean (跟 MSSQL 一致),
+#       不用 PostgreSQL 原生 BOOLEAN type, 減少 caller 修改
+
+def get_business_codes(active_only: bool = True) -> list:
     sql = "SELECT * FROM BusinessCode"
     if active_only:
         sql += " WHERE is_active = 1"
@@ -63,11 +109,11 @@ def get_business_codes(active_only: bool = True) -> list[dict]:
     return query(sql)
 
 
-def get_business_code(code: str) -> dict | None:
+def get_business_code(code: str):
     return query_one("SELECT * FROM BusinessCode WHERE code = ?", (code,))
 
 
-def get_user_pending_batches(ad_account: str) -> list[dict]:
+def get_user_pending_batches(ad_account: str) -> list:
     """取得 ad_account 待簽的批次清單"""
     sql = """
     SELECT b.*, bc.name AS business_name
@@ -83,11 +129,11 @@ def get_user_pending_batches(ad_account: str) -> list[dict]:
     return query(sql, (ad_account,))
 
 
-def get_batch_files(batch_id: str) -> list[dict]:
+def get_batch_files(batch_id: str) -> list:
     return query("SELECT * FROM BatchFile WHERE batch_id = ? ORDER BY id", (batch_id,))
 
 
-def get_batch(batch_id: str) -> dict | None:
+def get_batch(batch_id: str):
     return query_one("SELECT * FROM Batch WHERE batch_id = ?", (batch_id,))
 
 
