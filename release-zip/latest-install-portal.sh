@@ -25,7 +25,7 @@
 
 set -uo pipefail   # 不要 set -e — 各 step 自己處理錯誤
 
-VERSION="install_portal_all_in_one v2.3.2 (2026-05-22)"
+VERSION="install_portal_all_in_one v2.3.3 (2026-05-22)"
 
 GREEN='\033[0;32m'; CYAN='\033[0;36m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 BOLD='\033[1m'
@@ -242,10 +242,17 @@ fi
 # === Step 5: 拷 Portal source 到 /opt/portal/app ===
 step "Step 5: 拷 Portal source"
 
-mkdir -p "$PORTAL_DIR"/{app,logs,scripts}
+mkdir -p "$PORTAL_DIR"/{logs,scripts}
+
+# v2.3.3 修正: 整個 /opt/portal/app/ 清掉重 cp, 避免之前 patch 殘留
+if [[ -d "$PORTAL_DIR/app" ]]; then
+    warn "清掉舊 /opt/portal/app/ (避免 patch 殘留)"
+    rm -rf "$PORTAL_DIR/app"
+fi
+mkdir -p "$PORTAL_DIR/app"
 
 cp -r "$PORTAL_SRC"/* "$PORTAL_DIR/app/" 2>&1 | tail -3
-ok "拷 $PORTAL_SRC/* -> $PORTAL_DIR/app/"
+ok "拷 $PORTAL_SRC/* -> $PORTAL_DIR/app/ (fresh)"
 
 # 判斷 RUN_USER
 if id -u nginx &>/dev/null; then
@@ -258,18 +265,15 @@ ok "RUN_USER = $RUN_USER"
 
 chown -R "$RUN_USER:$RUN_USER" "$PORTAL_DIR"
 
-# 修補 wsgi.py: 確保有 module-level `app` (gunicorn wsgi:app 用)
-if [[ -f "$PORTAL_DIR/app/wsgi.py" ]] && ! grep -qE '^app\s*=' "$PORTAL_DIR/app/wsgi.py"; then
-    warn "wsgi.py 沒有 module-level 'app', 自動 patch"
-    cat >> "$PORTAL_DIR/app/wsgi.py" <<'EOF'
-
-# Patched by install_portal_all_in_one for gunicorn
-try:
-    app
-except NameError:
-    from app import create_app
-    app = create_app()
-EOF
+# 驗 wsgi.py 確實有 module-level app (用 [[:space:]] 不用 \s, ERE 不認 \s)
+if [[ -f "$PORTAL_DIR/app/wsgi.py" ]]; then
+    if grep -qE '^app[[:space:]]*=' "$PORTAL_DIR/app/wsgi.py"; then
+        ok "wsgi.py 有 module-level app (不需 patch)"
+    else
+        warn "wsgi.py 沒 module-level app, 確認 /opt/sf/portal/wsgi.py 是新版"
+    fi
+else
+    fail "/opt/portal/app/wsgi.py 不存在, Portal source 缺檔"
 fi
 
 # === Step 6: PostgreSQL DB + user ===
