@@ -62,11 +62,37 @@ def detail(batch_id):
             abort(403)
 
         files = get_batch_files(batch_id) or []
+
+        # v2.5: 算 deadline (first_file_at + retention_days)
+        from datetime import timedelta
+        deadline = None
+        if batch.get('first_file_at') and bc:
+            retention = bc.get('retention_days', 7)
+            deadline = batch['first_file_at'] + timedelta(days=retention)
+
+        # v2.5: 簽核群組成員 (階段二接 AD 真查, 現在 stub)
+        approvers = _stub_approvers(bc.get('approver_ad_group') if bc else None)
+
     except Exception as e:
         current_app.logger.exception('[approval.detail] 撈失敗')
         flash(f'撈批次失敗: {e}', 'error')
         return redirect(url_for('approval.list_view'))
-    return render_template('approval_detail.html', batch=batch, bc=bc, files=files)
+    return render_template('approval_detail.html',
+                           batch=batch, bc=bc, files=files,
+                           deadline=deadline, approvers=approvers)
+
+
+def _stub_approvers(group_name):
+    """階段一 stub: 給 5 個假名. 階段二接 AD 真查."""
+    if not group_name:
+        return []
+    return [
+        {'ad_account': 'CORP\\wang.manager', 'display_name': '王主管'},
+        {'ad_account': 'CORP\\lin.deputy',   'display_name': '林副理'},
+        {'ad_account': 'CORP\\huang.lead',   'display_name': '黃組長'},
+        {'ad_account': 'CORP\\chou.audit',   'display_name': '周稽核'},
+        {'ad_account': 'CORP\\wu.security',  'display_name': '吳資安'},
+    ]
 
 
 @approval_bp.route('/<batch_id>/approve', methods=['POST'])

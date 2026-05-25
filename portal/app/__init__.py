@@ -20,6 +20,41 @@ def create_app(config: Config = None):
         config = Config()
     app.config.from_object(config)
 
+    # ===== Jinja2 custom filters (v2.5) =====
+    def humanize_bytes(n):
+        try:
+            n = int(n)
+        except (ValueError, TypeError):
+            return n
+        for u, t in (('GB', 1024**3), ('MB', 1024**2), ('KB', 1024)):
+            if n >= t:
+                v = n / t
+                return f'{v:.1f} {u}' if v < 100 else f'{int(v)} {u}'
+        return f'{n} B'
+
+    def humanize_age(start, end=None):
+        from datetime import datetime, timezone
+        if not start:
+            return '-'
+        if end is None:
+            end = datetime.now(timezone.utc)
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=timezone.utc)
+        diff = end - start
+        days = diff.days
+        hours = diff.seconds // 3600
+        mins = (diff.seconds % 3600) // 60
+        if days > 0:
+            return f'{days} 天 {hours} 時'
+        if hours > 0:
+            return f'{hours} 時 {mins} 分'
+        if mins > 0:
+            return f'{mins} 分'
+        return f'{diff.seconds} 秒'
+
+    app.jinja_env.filters['humanize_bytes'] = humanize_bytes
+    app.jinja_env.filters['humanize_age'] = humanize_age
+
     # ===== Logging =====
     log_dir = config.PORTAL_LOG_DIR
     os.makedirs(log_dir, exist_ok=True)

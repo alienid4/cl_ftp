@@ -1,37 +1,62 @@
 {% extends "base.html" %}
 {% block title %}我的待簽{% endblock %}
 {% block content %}
-<h1>我的待簽 ({{ batches|length }})</h1>
+<div class="page-header">
+    <h1 style="font-size:22px; font-weight:700;">📝 我的待簽 ({{ batches|length }})</h1>
+</div>
+
+<div class="card card-status-warn">
+    <div class="card-title">ANY 制簽核提示</div>
+    <div style="font-size:14px;">
+        同業務有 5 位簽核人, <strong>任 1 同意即放行 / 任 1 駁回即駁回</strong>。請儘速處理。
+    </div>
+</div>
 
 {% if batches %}
-<table style="width:100%; border-collapse: collapse;">
-    <thead>
-        <tr style="border-bottom:2px solid #ccc;">
-            <th style="text-align:left; padding:8px;">業務</th>
-            <th style="text-align:left; padding:8px;">批次</th>
-            <th style="text-align:left; padding:8px;">上傳人</th>
-            <th style="text-align:right; padding:8px;">檔數</th>
-            <th style="text-align:right; padding:8px;">總大小</th>
-            <th style="padding:8px;">操作</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for batch in batches %}
-        <tr style="border-bottom:1px solid #eee;">
-            <td style="padding:8px;">{{ batch.business_name or batch.business_code }}</td>
-            <td style="padding:8px;"><code>{{ batch.batch_id }}</code></td>
-            <td style="padding:8px;">{{ batch.uploader or '-' }}</td>
-            <td style="padding:8px; text-align:right;">{{ batch.file_count }}</td>
-            <td style="padding:8px; text-align:right;">{{ batch.total_size }} B</td>
-            <td style="padding:8px;">
-                <a href="{{ url_for('approval.detail_view', batch_id=batch.batch_id) }}"
-                   class="btn btn-secondary btn-sm">展開</a>
-            </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
+<div class="card">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>業務</th>
+                    <th>批次 ID</th>
+                    <th>來源</th>
+                    <th>檔數</th>
+                    <th>大小</th>
+                    <th>上傳時間</th>
+                    <th>年齡</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for b in batches %}
+                <tr>
+                    <td>
+                        <span class="badge badge-a">{{ b.business_code }}</span>
+                        <div class="text-muted-sm">{{ b.business_name or '-' }}</div>
+                    </td>
+                    <td><code class="code-inline">{{ b.batch_id }}</code></td>
+                    <td class="mono" style="font-size:12px;">
+                        {% if b.source_host %}{{ b.source_host }}{% else %}{{ b.source_ip }}{% endif %}
+                    </td>
+                    <td><span class="badge badge-a">{{ b.file_count }} 檔</span></td>
+                    <td>{{ b.total_size|humanize_bytes }}</td>
+                    <td class="mono" style="font-size:12px;">{{ b.first_file_at.strftime('%m-%d %H:%M') if b.first_file_at else '-' }}</td>
+                    <td>
+                        <span class="badge badge-warn">{{ b.first_file_at|humanize_age }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('approval.detail', batch_id=b.batch_id) }}" class="btn btn-secondary btn-sm">展開</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% else %}
-<div class="card"><p style="color:#999;">目前沒有待簽案件.</p></div>
+<div class="card">
+    <p style="color:#999; text-align:center; padding:30px;">目前沒有待簽案件。</p>
+</div>
 {% endif %}
 {% endblock %}
