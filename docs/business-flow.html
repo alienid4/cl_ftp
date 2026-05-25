@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>SF Portal — 完整業務流程</title>
+<style>
+:root {
+  --g1: #26A889;
+  --g2: #1B7960;
+  --g3: #0F5444;
+  --orange: #FF8800;
+  --blue: #2563EB;
+  --purple: #7C3AED;
+  --pink: #DB2777;
+  --red: #DC2626;
+  --gray: #6B7280;
+  --bg: #F5F7F6;
+  --border: #D1D5DB;
+  --text: #111827;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 24px;
+  line-height: 1.6;
+}
+.container { max-width: 1400px; margin: 0 auto; }
+h1 { font-size: 24px; color: var(--g3); margin: 0 0 6px; }
+h2 { font-size: 18px; color: var(--g2); margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--g1); }
+h3 { font-size: 15px; margin: 16px 0 8px; }
+.subtitle { color: var(--gray); margin-bottom: 24px; font-size: 14px; }
+
+/* ===== Actor legend ===== */
+.actors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: white;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+.actor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.actor-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.a-prd     { background: var(--blue); }
+.a-sf      { background: var(--g1); }
+.a-portal  { background: var(--g2); }
+.a-sign    { background: var(--orange); }
+.a-oa      { background: var(--purple); }
+.a-it      { background: var(--pink); }
+.a-sched   { background: var(--gray); }
+
+/* ===== Timeline ===== */
+.timeline {
+  position: relative;
+  padding-left: 40px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: var(--border);
+}
+
+.step {
+  position: relative;
+  margin-bottom: 24px;
+  background: white;
+  border-radius: 8px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-left-width: 5px;
+}
+.step::before {
+  content: '';
+  position: absolute;
+  left: -34px;
+  top: 22px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--g1);
+}
+.step.prd    { border-left-color: var(--blue); }
+.step.prd::before    { border-color: var(--blue); }
+.step.sf     { border-left-color: var(--g1); }
+.step.sf::before     { border-color: var(--g1); }
+.step.portal { border-left-color: var(--g2); }
+.step.portal::before { border-color: var(--g2); }
+.step.sign   { border-left-color: var(--orange); }
+.step.sign::before   { border-color: var(--orange); }
+.step.oa     { border-left-color: var(--purple); }
+.step.oa::before     { border-color: var(--purple); }
+.step.it     { border-left-color: var(--pink); }
+.step.it::before     { border-color: var(--pink); }
+.step.sched  { border-left-color: var(--gray); }
+.step.sched::before  { border-color: var(--gray); }
+
+.step-num {
+  display: inline-block;
+  background: var(--g1);
+  color: white;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.step.prd    .step-num { background: var(--blue); }
+.step.sign   .step-num { background: var(--orange); }
+.step.oa     .step-num { background: var(--purple); }
+.step.it     .step-num { background: var(--pink); }
+.step.sched  .step-num { background: var(--gray); }
+.step.portal .step-num { background: var(--g2); }
+
+.step-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+}
+.step-actor {
+  font-size: 12px;
+  color: var(--gray);
+  margin-left: 8px;
+  font-weight: 400;
+}
+.step-body {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.step-detail-grid {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 6px 12px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.sd-key { color: var(--gray); }
+.sd-val { color: var(--text); }
+code {
+  background: #F3F4F6;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-family: Menlo, Consolas, monospace;
+  color: var(--g3);
+}
+.badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.b-ok { background: #D1FAE5; color: #065F46; }
+.b-warn { background: #FEF3C7; color: #92400E; }
+.b-err { background: #FEE2E2; color: #991B1B; }
+.b-info { background: #DBEAFE; color: #1E40AF; }
+
+.callout {
+  margin: 24px 0;
+  padding: 14px 16px;
+  border-left: 4px solid var(--orange);
+  background: #FFFBEB;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.callout.info { border-left-color: var(--blue); background: #EFF6FF; }
+.callout.ok { border-left-color: var(--g1); background: #ECFDF5; }
+.callout strong { color: var(--g3); }
+
+/* ===== Branch (signature decision) ===== */
+.branches {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+.branch {
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #FAFAFA;
+  font-size: 12px;
+}
+.branch h4 { margin: 0 0 6px; font-size: 13px; }
+.branch.ok h4 { color: #065F46; }
+.branch.partial h4 { color: #92400E; }
+.branch.rej h4 { color: #991B1B; }
+
+/* ===== DB state box ===== */
+.db-state {
+  background: #1F2937;
+  color: #E5E7EB;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 11px;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.db-state .k { color: #93C5FD; }
+.db-state .v { color: #FCD34D; }
+
+/* ===== Phase header ===== */
+.phase-header {
+  margin: 32px 0 16px;
+  padding: 16px 20px;
+  background: linear-gradient(90deg, var(--g3) 0%, var(--g2) 100%);
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.phase-header h2 {
+  color: white;
+  margin: 0;
+  border: none;
+  font-size: 17px;
+}
+.phase-tag {
+  background: rgba(255,255,255,0.2);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>📋 SF Portal — 完整業務流程</h1>
+<p class="subtitle">從 PRD AP 上傳到 OA USER 下載的完整 lifecycle,標出每步的角色 / 觸發 / 資料變化。</p>
+
+<!-- Actor legend -->
+<div class="actors">
+  <div class="actor"><span class="actor-dot a-prd"></span> PRD AP 系統 (上傳源)</div>
+  <div class="actor"><span class="actor-dot a-sf"></span> SF 主機 (OpenSSH/Samba)</div>
+  <div class="actor"><span class="actor-dot a-sched"></span> SF 排程 (背景跑)</div>
+  <div class="actor"><span class="actor-dot a-portal"></span> Flask Portal</div>
+  <div class="actor"><span class="actor-dot a-sign"></span> 簽核人 (5 人 ANY 制)</div>
+  <div class="actor"><span class="actor-dot a-oa"></span> OA 部門 USER (下載)</div>
+  <div class="actor"><span class="actor-dot a-it"></span> IT 管理員</div>
+</div>
+
+<!-- ========== Phase 1: 上傳 ========== -->
+<div class="phase-header">
+  <h2>Phase 1 — 上傳階段</h2>
+  <span class="phase-tag">耗時: 數秒 ~ 30 秒</span>
+</div>
+
+<div class="timeline">
+
+<div class="step prd">
+  <span class="step-num">1</span>
+  <span class="step-title">PRD AP 主機申請 PAM 取得 u01 密碼</span>
+  <span class="step-actor">— 操作: AP 系統 / 上傳人 (張小明)</span>
+  <div class="step-body">
+    上傳前先到 PAM 系統申請 u01 帳號的密碼(限時取用、留稽核軌跡)。
+    <div class="step-detail-grid">
+      <span class="sd-key">系統</span><span class="sd-val">PAM</span>
+      <span class="sd-key">輸出</span><span class="sd-val">u01 臨時密碼 + PAM request ID (供 chain_id 串接)</span>
+      <span class="sd-key">階段</span><span class="sd-val"><span class="badge b-warn">⏳ 階段二接 PAM</span></span>
+    </div>
+  </div>
+</div>
+
+<div class="step prd">
+  <span class="step-num">2</span>
+  <span class="step-title">SFTP 上傳到 SF</span>
+  <span class="step-actor">— AP 系統 → SF:22</span>
+  <div class="step-body">
+    AP 用 u01 + 密碼,sftp 上傳 N 個檔到 <code>/data/exchange/u01/inbound/</code>。
+    <div class="step-detail-grid">
+      <span class="sd-key">指令</span><span class="sd-val"><code>sftp u01@SF</code> 然後 <code>put 月結_*.csv</code></span>
+      <span class="sd-key">chroot</span><span class="sd-val">u01 看不到 u02/u03/系統檔</span>
+      <span class="sd-key">事件</span><span class="sd-val">每個 put OpenSSH log 寫一筆</span>
+      <span class="sd-key">階段</span><span class="sd-val"><span class="badge b-warn">⏳ v2.5.1 SFTP 設定待跑</span></span>
+    </div>
+    <div class="db-state">
+[OpenSSH log] <span class="k">user</span>=<span class="v">u01</span> <span class="k">src</span>=<span class="v">10.20.5.31</span> <span class="k">file</span>=<span class="v">月結_客戶清單.csv</span> <span class="k">size</span>=<span class="v">2.1MB</span> <span class="k">action</span>=<span class="v">upload</span>
+    </div>
+  </div>
+</div>
+
+<div class="step sched">
+  <span class="step-num">3</span>
+  <span class="step-title">排程 batch_aggregator 偵測新檔</span>
+  <span class="step-actor">— 背景 systemd timer, 每 5 秒掃一次</span>
+  <div class="step-body">
+    掃 <code>/data/exchange/u0X/inbound/</code> 新檔,套滑動 30 秒邏輯聚合成批次。
+    <div class="step-detail-grid">
+      <span class="sd-key">規則</span><span class="sd-val">同 u0X + 同來源 IP + 30s 內 → 同一批</span>
+      <span class="sd-key">安全閥</span><span class="sd-val">超過 5 分鐘強制 close (新檔開新批)</span>
+      <span class="sd-key">DB 變化</span><span class="sd-val">INSERT INTO <code>batch</code> + <code>batchfile</code></span>
+      <span class="sd-key">階段</span><span class="sd-val"><span class="badge b-warn">⏳ v2.5.2 待寫排程</span></span>
+    </div>
+    <div class="db-state">
+[batch] <span class="k">batch_id</span>=<span class="v">u01-20260520-1432</span> <span class="k">file_count</span>=<span class="v">5</span> <span class="k">total_size</span>=<span class="v">8.4MB</span> <span class="k">status</span>=<span class="v">PENDING_APPROVAL</span>
+[batchfile x5] 每檔一筆, decision=NULL (待簽)
+    </div>
+  </div>
+</div>
+
+<div class="step portal">
+  <span class="step-num">4</span>
+  <span class="step-title">Portal 寫 AuditLog + 寄通知信</span>
+  <span class="step-actor">— Flask 程式 + SMTP</span>
+  <div class="step-body">
+    Portal 偵測新 batch (排程觸發 callback),寫 AuditLog 並寄 mail 給該業務的 5 位簽核人。
+    <div class="step-detail-grid">
+      <span class="sd-key">事件</span><span class="sd-val">BATCH_PENDING + 5 封 mail</span>
+      <span class="sd-key">收件人</span><span class="sd-val">AD 群組 <code>g_u01_approvers</code> 所有成員</span>
+      <span class="sd-key">階段</span><span class="sd-val"><span class="badge b-warn">⏳ SMTP 待設</span></span>
+    </div>
+    <div class="db-state">
+[auditlog] <span class="k">event_type</span>=<span class="v">BATCH_PENDING</span> <span class="k">batch_id</span>=<span class="v">u01-20260520-1432</span> <span class="k">cef_signature</span>=<span class="v">SF-210</span>
+[mail x5] 主旨: "[SF] u01 待您簽核 (批次 1432, 5 檔)"
+    </div>
+  </div>
+</div>
+
+</div><!-- /timeline -->
+
+<!-- ========== Phase 2: 簽核 ========== -->
+<div class="phase-header">
+  <h2>Phase 2 — 簽核階段 (ANY 制)</h2>
+  <span class="phase-tag">耗時: 數分鐘 ~ 7 天 (超時自動駁回)</span>
+</div>
+
+<div class="timeline">
+
+<div class="step sign">
+  <span class="step-num">5</span>
+  <span class="step-title">簽核人開瀏覽器 → AD 登入 Portal</span>
+  <span class="step-actor">— 王主管 / 林副理 / 黃組長 / 周稽核 / 吳資安 (任一人)</span>
+  <div class="step-body">
+    收到通知信,點連結進 Portal,用個人 AD 帳號登入。
+    <div class="step-detail-grid">
+      <span class="sd-key">URL</span><span class="sd-val">https://sf.corp/auth/login</span>
+      <span class="sd-key">認證</span><span class="sd-val">LDAP bind 到公司 AD (or 階段一 DEV_MODE 任意)</span>
+      <span class="sd-key">看到</span><span class="sd-val">首頁 KPI 有「待我簽核 1 件」</span>
+      <span class="sd-key">階段</span><span class="sd-val"><span class="badge b-warn">⏳ AD 待接</span></span>
+    </div>
+    <div class="db-state">
+[auditlog] <span class="k">event_type</span>=<span class="v">LOGIN_OK</span> <span class="k">actor</span>=<span class="v">CORP\wang.manager</span> <span class="k">source_ip</span>=<span class="v">10.30.1.88</span>
+[portaluser] UPSERT (cache 顯示名 / 部門 / 群組)
+    </div>
+  </div>
+</div>
+
+<div class="step sign">
+  <span class="step-num">6</span>
+  <span class="step-title">點「我的待簽」→ 看到批次 + 展開檔案</span>
+  <span class="step-actor">— Portal 一行 1 批 list</span>
+  <div class="step-body">
+    Portal 列我有權簽的批次 (依 AD 群組過濾)。點批次「展開」看內含 5 個檔 + SHA-256 + 大小 + 用途說明。
+    <div class="step-detail-grid">
+      <span class="sd-key">過濾</span><span class="sd-val">WHERE status='PENDING_APPROVAL' AND <code>g_u01_approvers</code> in user.groups</span>
+      <span class="sd-key">UI</span><span class="sd-val">每批顯 [全收] [全退] [細選] 三按鈕</span>
+    </div>
+  </div>
+</div>
+
+<div class="step sign">
+  <span class="step-num">7</span>
+  <span class="step-title">決策: ANY 制 (任 1 同意即放行, 任 1 駁回即駁回)</span>
+  <span class="step-actor">— 行 row-level lock 競態處理</span>
+  <div class="step-body">
+    <div class="branches">
+      <div class="branch ok">
+        <h4>✅ 7a 全收 (任 1 同意)</h4>
+        UPDATE batch SET status='APPROVED', approved_by=自己<br>
+        所有檔自動搬到 samba<br>
+        AuditLog: APPROVE_OK + MOVE_OK x5
+      </div>
+      <div class="branch partial">
+        <h4>⚠️ 7b 細選 (3 收 2 退)</h4>
+        UPDATE batchfile SET decision='APPROVED'/'REJECTED' per file<br>
+        收的搬 samba, 退的進 error/<br>
+        batch.status='APPROVED_PARTIAL'
+      </div>
+      <div class="branch rej">
+        <h4>❌ 7c 全退 (任 1 駁回 + 寫原因)</h4>
+        UPDATE batch SET status='REJECTED', reject_reason=...<br>
+        全部檔進 /error/, 上傳人收 mail<br>
+        AuditLog: APPROVE_REJECT
+      </div>
+    </div>
+    <div class="callout">
+      <strong>競態</strong>: 二人同時點同意 → DB row-level lock 先到先處理, 後到者 UI 顯「已由 XXX 處理」。一同意 + 一駁回 → 同上,先到先處理。
+    </div>
+  </div>
+</div>
+
+<div class="step portal">
+  <span class="step-num">8</span>
+  <span class="step-title">Portal 搬檔到 OA samba 目錄</span>
+  <span class="step-actor">— Flask 用 svc_portal 服務帳號</span>
+  <div class="step-body">
+    <code>shutil.move(/data/exchange/u01/inbound/月結_客戶清單.csv → /data/exchange/samba/architecture/)</code>
+    <div class="step-detail-grid">
+      <span class="sd-key">NTFS ACL</span><span class="sd-val">samba 目錄給 <code>dept_archi_view</code> 群組讀取權</span>
+      <span class="sd-key">SACL</span><span class="sd-val">啟用檔案存取稽核 → SMB 下載事件</span>
+      <span class="sd-key">DB 變化</span><span class="sd-val">UPDATE batchfile SET final_path=..., moved_at=...</span>
+    </div>
+    <div class="db-state">
+[auditlog x5] <span class="k">event_type</span>=<span class="v">MOVE_OK</span> <span class="k">target_path</span>=<span class="v">/data/exchange/samba/architecture/月結_客戶清單.csv</span>
+    </div>
+  </div>
+</div>
+
+<div class="step portal">
+  <span class="step-num">9</span>
+  <span class="step-title">寄通知信給 OA 端可下載群組</span>
+  <span class="step-actor">— SMTP</span>
+  <div class="step-body">
+    通知 <code>dept_archi_view</code> AD 群組所有成員 "u01 新檔可下載"。
+    <div class="callout info">
+      訊息含: 檔名清單 / 來源業務代號 / 放行人 / samba 路徑 / 7 天到期日。
+    </div>
+  </div>
+</div>
+
+</div><!-- /timeline -->
+
+<!-- ========== Phase 3: 下載 ========== -->
+<div class="phase-header">
+  <h2>Phase 3 — 下載階段</h2>
+  <span class="phase-tag">耗時: 數秒</span>
+</div>
+
+<div class="timeline">
+
+<div class="step oa">
+  <span class="step-num">10</span>
+  <span class="step-title">OA USER 收信 → 選 1 種方式拿檔</span>
+  <span class="step-actor">— 架構科同仁 (CORP\zhang.viewer)</span>
+  <div class="step-body">
+    <div class="branches">
+      <div class="branch ok">
+        <h4>方式 A — SMB 拖拉 (大檔)</h4>
+        檔案總管打 <code>\\SF\architecture\</code>,多選拖到本機<br>
+        最快, AD 群組權限自動驗<br>
+        <span class="badge b-warn">⏳ Samba 待裝</span>
+      </div>
+      <div class="branch ok">
+        <h4>方式 B — Portal 逐個下載</h4>
+        Portal「我的可下載」頁,逐檔點 [📥 下載]<br>
+        走 HTTPS, 不用掛 SMB<br>
+        <span class="badge b-info">已支援 (路由待寫)</span>
+      </div>
+      <div class="branch ok">
+        <h4>方式 C — Portal 批次 ZIP</h4>
+        勾多檔 → [📦 打包成 ZIP]<br>
+        Portal 串流打包, 不存中間檔<br>
+        <span class="badge b-info">設計中</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="step sf">
+  <span class="step-num">11</span>
+  <span class="step-title">SF 寫下載事件到 AuditLog</span>
+  <span class="step-actor">— SACL (SMB) / Portal log</span>
+  <div class="step-body">
+    SMB 下載走 Windows Security Event Log 解析寫入。Portal 下載走 Flask request hook。
+    <div class="db-state">
+[auditlog] <span class="k">event_type</span>=<span class="v">SMB_DOWNLOAD</span>/<span class="v">PORTAL_DOWNLOAD</span>/<span class="v">PORTAL_ZIP</span> <span class="k">actor</span>=<span class="v">CORP\zhang.viewer</span> <span class="k">target_file</span>=<span class="v">...</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- /timeline -->
+
+<!-- ========== Phase 4: 清理 + 稽核 ========== -->
+<div class="phase-header">
+  <h2>Phase 4 — 清理 + 稽核 (背景永續)</h2>
+  <span class="phase-tag">每日跑</span>
+</div>
+
+<div class="timeline">
+
+<div class="step sched">
+  <span class="step-num">12</span>
+  <span class="step-title">排程清理舊檔 (7 天)</span>
+  <span class="step-actor">— 每日 02:00 systemd timer</span>
+  <div class="step-body">
+    <code>/data/exchange/u0X/inbound/</code> 跟 <code>samba/&lt;dept&gt;/</code> 7 天到期檔自動刪。
+    <div class="step-detail-grid">
+      <span class="sd-key">保留期</span><span class="sd-val">per-業務代號可設 (預設 7 天)</span>
+      <span class="sd-key">事件</span><span class="sd-val">PURGE x N 寫 AuditLog</span>
+    </div>
+  </div>
+</div>
+
+<div class="step sched">
+  <span class="step-num">13</span>
+  <span class="step-title">簽核超時自動駁回</span>
+  <span class="step-actor">— 每小時掃</span>
+  <div class="step-body">
+    <code>batch.status='PENDING_APPROVAL' AND created_at &lt; NOW - 7 days</code> → 自動 REJECTED + 通知上傳人。
+  </div>
+</div>
+
+<div class="step it">
+  <span class="step-num">14</span>
+  <span class="step-title">IT 稽核查詢 / 事件鏈追蹤</span>
+  <span class="step-actor">— Portal admin 介面</span>
+  <div class="step-body">
+    IT 隨時開 <code>/audit/query</code> 多條件查 (時間 / 操作者 / 業務代號 / 檔名 / 來源 IP / 事件類型)。
+    <div class="step-detail-grid">
+      <span class="sd-key">匯出</span><span class="sd-val">CSV (供 SIEM / 主管報告)</span>
+      <span class="sd-key">事件鏈</span><span class="sd-val">用 <code>chain_id</code> 串 PAM → SFTP → 簽核 → SMB 一頁顯</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- /timeline -->
+
+<!-- ========== 流程關鍵 KPI ========== -->
+<h2>📊 流程關鍵 KPI</h2>
+
+<table style="width:100%; border-collapse:collapse; background:white; border:1px solid var(--border); border-radius:6px; overflow:hidden;">
+<thead style="background:var(--g2); color:white;">
+<tr>
+<th style="text-align:left; padding:10px;">指標</th>
+<th style="text-align:left; padding:10px;">目標</th>
+<th style="text-align:left; padding:10px;">超過怎樣</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="padding:8px 10px;">SFTP 上傳 → Portal 看到批次</td><td style="padding:8px 10px;">≤ 30 秒</td><td style="padding:8px 10px;">超 1 分鐘 = 排程沒跑, 告警</td></tr>
+<tr style="background:#FAFAFA;"><td style="padding:8px 10px;">通知信寄出</td><td style="padding:8px 10px;">≤ 1 分鐘</td><td style="padding:8px 10px;">超 5 分鐘 = SMTP 問題</td></tr>
+<tr><td style="padding:8px 10px;">簽核完成 (任 1 點同意)</td><td style="padding:8px 10px;">≤ 4 小時 (上班時段)</td><td style="padding:8px 10px;">超 7 天 = 自動駁回</td></tr>
+<tr style="background:#FAFAFA;"><td style="padding:8px 10px;">搬檔到 samba</td><td style="padding:8px 10px;">≤ 5 秒</td><td style="padding:8px 10px;">超 1 分鐘 = 看 portal-stderr.log</td></tr>
+<tr><td style="padding:8px 10px;">OA USER 下載</td><td style="padding:8px 10px;">SMB 即時 / Portal ZIP 10 秒以內 (1GB 以下)</td><td style="padding:8px 10px;">大檔走 SMB 不要走 ZIP</td></tr>
+<tr style="background:#FAFAFA;"><td style="padding:8px 10px;">AuditLog 寫入延遲</td><td style="padding:8px 10px;">≤ 1 秒</td><td style="padding:8px 10px;">超 5 秒 = DB 卡, 看 postgresql.log</td></tr>
+</tbody>
+</table>
+
+<!-- ========== 異常處理路徑 ========== -->
+<h2>⚠️ 異常處理路徑</h2>
+
+<div class="callout">
+<strong>場景 A — SFTP 上傳被擋</strong>: 來源 IP 不在白名單 → 22 port 拒絕 → AP 端收 connection refused.
+<br>→ 解: IT 加 firewall 規則 <code>firewall-cmd --add-rich-rule</code>.
+</div>
+
+<div class="callout">
+<strong>場景 B — 簽核人都不在 (連假)</strong>: 7 天超時 → 自動駁回 + 通知上傳人重送.
+<br>→ 解: Portal 可設代簽人 (未實作), 或業務負責人加新成員到 <code>g_u01_approvers</code>.
+</div>
+
+<div class="callout">
+<strong>場景 C — 大檔上傳超過 5 分鐘安全閥</strong>: 後續新檔開新批 → 同個檔可能分散到 2 批簽.
+<br>→ 解: 安全閥可調 (5/10/15 分鐘), 或約定 AP 端分小段傳.
+</div>
+
+<div class="callout">
+<strong>場景 D — 簽核通過但搬檔 fail (samba 滿 / NTFS 權限錯)</strong>: <code>MOVE_FAIL</code> 寫 AuditLog + 告警 IT.
+<br>→ 解: 檔留 inbound/, IT 處理後手動觸發重搬.
+</div>
+
+<div class="callout">
+<strong>場景 E — OA USER 收信但 samba 掛不上</strong>: AD 群組未生效 / 跨網段防火牆問題.
+<br>→ 解: Portal「我的可下載」改走 HTTPS ZIP, 100% 通.
+</div>
+
+<!-- ========== 階段對照 ========== -->
+<h2>🚦 v2.4.6 vs 完整流程</h2>
+
+<table style="width:100%; border-collapse:collapse; background:white; border:1px solid var(--border); border-radius:6px; overflow:hidden;">
+<thead style="background:var(--g2); color:white;">
+<tr>
+<th style="text-align:left; padding:10px;">流程步</th>
+<th style="text-align:left; padding:10px;">v2.4.6 (現在)</th>
+<th style="text-align:left; padding:10px;">完整流程</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="padding:8px 10px;">PAM 取密碼</td><td style="padding:8px 10px;"><span class="badge b-warn">⏳ 階段二</span> 固定密碼</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> PAM 限時取 + chain_id</td></tr>
+<tr style="background:#FAFAFA;"><td style="padding:8px 10px;">SFTP 上傳</td><td style="padding:8px 10px;"><span class="badge b-warn">⏳</span> 沒建 u01 帳號</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> v2.5.1 建 u01~u04 + chroot</td></tr>
+<tr><td style="padding:8px 10px;">排程聚合</td><td style="padding:8px 10px;"><span class="badge b-err">❌</span> 沒寫</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> v2.5.2 systemd timer</td></tr>
+<tr style="background:#FAFAFA;"><td style="padding:8px 10px;">AuditLog 寫入</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> seed 10 筆</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> 真實事件持續寫</td></tr>
+<tr><td style="padding:8px 10px;">通知信 SMTP</td><td style="padding:8px 10px;"><span class="badge b-warn">⏳</span> 沒接</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> mail-relay.corp</td></tr>
+<tr style="background:#FAFAFA;"><td style="padding:8px 10px;">AD 登入</td><td style="padding:8px 10px;"><span class="badge b-warn">⏳</span> DEV_MODE 任意</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> 真實 AD bind</td></tr>
+<tr><td style="padding:8px 10px;">Portal 簽核</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> UI + 路由都通</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> 同左</td></tr>
+<tr style="background:#FAFAFA;"><td style="padding:8px 10px;">搬檔到 samba</td><td style="padding:8px 10px;"><span class="badge b-warn">⏳</span> 邏輯有, 但 samba 沒裝</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> v2.5.3 裝 samba</td></tr>
+<tr><td style="padding:8px 10px;">OA SMB 下載</td><td style="padding:8px 10px;"><span class="badge b-err">❌</span> samba 沒裝</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> 含 AD 整合</td></tr>
+<tr style="background:#FAFAFA;"><td style="padding:8px 10px;">Portal 下載 / ZIP</td><td style="padding:8px 10px;"><span class="badge b-err">❌</span> 路由沒寫</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> 後續做</td></tr>
+<tr><td style="padding:8px 10px;">7 天清理</td><td style="padding:8px 10px;"><span class="badge b-err">❌</span></td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> v2.5.x cron</td></tr>
+<tr style="background:#FAFAFA;"><td style="padding:8px 10px;">稽核查詢</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> 介面通, 10 筆 seed</td><td style="padding:8px 10px;"><span class="badge b-ok">✅</span> 真實事件</td></tr>
+</tbody>
+</table>
+
+<p style="text-align:center; color:var(--gray); font-size:12px; margin-top:32px;">
+SF Portal v2.4.6 · 業務流程圖 · 2026-05-25
+</p>
+
+</div>
+</body>
+</html>
