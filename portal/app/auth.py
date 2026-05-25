@@ -150,15 +150,18 @@ def _groups_from_member_of(member_of_list):
 
 # ===== Public auth API =====
 
-def authenticate(username: str, password: str) -> Optional[User]:
+def authenticate(username: str, password: str):
     """
     驗證 username / password.
-    DEV_MODE → 任意通過
-    AD_AUTH_MODE=simple → 標準 LDAP simple bind 兩段式
-    AD_AUTH_MODE=ntlm → NTLM bind (Windows AD)
+    回傳 (user_or_None, reason_str).
+      reason 為 'OK' / 'EMPTY_FIELD' / 'AD_UNREACHABLE' / 'SERVICE_BIND_FAIL'
+            / 'USER_NOT_FOUND' / 'BAD_PASSWORD' / 'EXCEPTION'
     """
+    if not username or not password:
+        return None, 'EMPTY_FIELD'
+
     if _dev_mode():
-        current_app.logger.warning('[DEV_MODE] bypass AD: ' + (username or ''))
+        current_app.logger.warning('[DEV_MODE] bypass AD: ' + username)
         return User(
             ad_account=username or 'devadmin',
             display_name=(username or 'devadmin') + ' (DEV)',
@@ -166,11 +169,8 @@ def authenticate(username: str, password: str) -> Optional[User]:
             department='DEV',
             is_admin=True,
             groups=['sf_admin', 'g_u01_approvers', 'g_u02_approvers', 'g_u03_approvers', 'g_u04_approvers'],
-        )
+        ), 'OK'
 
-    cfg = current_app.config
-
-    # 標準化 (拿掉 domain prefix CORP\\xxx)
     user_part = username.split('\\')[-1] if '\\' in username else username
 
     if _auth_mode() == 'ntlm':
@@ -181,18 +181,38 @@ def authenticate(username: str, password: str) -> Optional[User]:
 def _auth_simple(username, password):
     """LDAP simple bind 兩段式: 服務帳號查 DN → 該 DN+pwd 驗證"""
     cfg = current_app.config
+    import socket as _sk
+    # 1. AD server 連得到嗎?
+    try:
+        _sk.create_connection((cfg['AD_SERVER'].split('://')[-1].split(':')[0],
+                              int(cfg['AD_SERVER'].rsplit(':', 1)[-1]) if ':' in cfg['AD_SERVER'].split('://')[-1] else 389),
+                              timeout=3).close()
+    except Exception as e:
+        current_app.logger.warning('[AD-simple] server unreachable ' + cfg['AD_SERVER'] + ': ' + str(e))
+        return None, 'AD_UNREACHABLE'
+
+    # 2. 服務帳號 bind
+    svc = _service_bind()
+    if not svc:
+        return None, 'SERVICE_BIND_FAIL'
+    svc.unbind()
+
+    # 3. 查 user DN
     info = _find_user_dn(username)
     if not info:
         current_app.logger.info('[AD-simple] user not found: ' + username)
-        return None
+        return None, 'USER_NOT_FOUND'
+
+    # 4. user DN + password 真正 bind
     user_dn = info['dn']
     try:
+        from ldap3 import Server, Connection, ALL, SIMPLE
         server = Server(cfg['AD_SERVER'], get_info=ALL)
         Connection(server, user=user_dn, password=password,
                    authentication=SIMPLE, auto_bind=True).unbind()
     except Exception as e:
-        current_app.logger.info('[AD-simple] bind fail ' + user_dn + ': ' + str(e))
-        return None
+        current_app.logger.info('[AD-simple] bad password for ' + user_dn + ': ' + str(e))
+        return None, 'BAD_PASSWORD'
 
     groups = _groups_from_member_of(info['member_of'])
     is_admin = any('sf_admin' in g.lower() or 'it.admin' in g.lower() for g in groups)
@@ -209,7 +229,7 @@ def _auth_simple(username, password):
         department=info['department'],
         is_admin=is_admin,
         groups=groups,
-    )
+    ), 'OK'
 
 
 def _auth_ntlm(username, password):
@@ -229,7 +249,7 @@ def _auth_ntlm(username, password):
         )
         if not conn.entries:
             conn.unbind()
-            return None
+            return None, 'USER_NOT_FOUND'
         e = conn.entries[0]
         display_name = str(e.displayName) if e.displayName else username
         email = str(e.mail) if e.mail else None
@@ -248,10 +268,15 @@ def _auth_ntlm(username, password):
             department=department,
             is_admin=is_admin,
             groups=groups,
-        )
+        ), 'OK'
     except Exception as e:
+        msg = str(e).lower()
         current_app.logger.warning('[AD-ntlm] bind 失敗 ' + nt_user + ': ' + str(e))
-        return None
+        if 'invalidcredentials' in msg or 'invalid credentials' in msg:
+            return None, 'BAD_PASSWORD'
+        if 'cant contact' in msg or "can't contact" in msg or 'unreachable' in msg:
+            return None, 'AD_UNREACHABLE'
+        return None, 'EXCEPTION'
 
 
 def get_user_groups(ad_account):
