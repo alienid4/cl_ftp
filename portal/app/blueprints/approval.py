@@ -99,6 +99,11 @@ def _stub_approvers(group_name):
 @login_required
 def do_approve(batch_id):
     """全收 / 細選同意 — ANY 制, 任 1 同意即放行"""
+    # v2.5: confirm token 防護, 防止繞 UI 直接 POST
+    if request.form.get('confirm') != 'yes':
+        flash('簽核需經過預覽確認, 請從簽核細節頁按鈕操作', 'warn')
+        return redirect(url_for('approval.detail', batch_id=batch_id))
+
     batch = get_batch(batch_id)
     bc = get_business_code(batch['business_code'])
 
@@ -157,6 +162,11 @@ def do_approve(batch_id):
 @login_required
 def do_reject(batch_id):
     """全退 — ANY 制, 任 1 駁回即駁回"""
+    # v2.5: confirm token 防護
+    if request.form.get('confirm') != 'yes':
+        flash('駁回需經過預覽確認, 請從簽核細節頁按鈕操作', 'warn')
+        return redirect(url_for('approval.detail', batch_id=batch_id))
+
     batch = get_batch(batch_id)
     bc = get_business_code(batch['business_code'])
 

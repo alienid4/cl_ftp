@@ -131,7 +131,7 @@
 </div>
 
 {# ========== 檔案清單 ========== #}
-<form method="post" action="{{ url_for('approval.do_approve', batch_id=batch.batch_id) }}">
+<form method="post" id="approval-form" action="{{ url_for('approval.do_approve', batch_id=batch.batch_id) }}">
 <div class="card" style="margin-top:14px;">
     <div class="card-title flex-between">
         <span>📂 檔案清單 ({{ files|length }})</span>
@@ -187,14 +187,135 @@
 <div class="card" style="margin-top:14px;">
     <div class="form-group">
         <label>簽核意見 (駁回必填)</label>
-        <textarea name="comment" rows="2" style="width:100%;" placeholder="(同意可空白; 駁回常用原因: 檔案損毀 / 格式錯 / 內容不符 / 重傳)"></textarea>
+        <textarea name="comment" id="comment-input" rows="2" style="width:100%;" placeholder="(同意可空白; 駁回常用原因: 檔案損毀 / 格式錯 / 內容不符 / 重傳)"></textarea>
     </div>
     <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
-        <button type="submit" name="action" value="all_approve" class="btn btn-primary">✓ 全收</button>
-        <button type="submit" name="action" value="all_reject" class="btn btn-danger">✗ 全退</button>
-        <button type="submit" name="action" value="detail" class="btn btn-secondary">執行細選</button>
+        {# step 1: 預覽按鈕 — 點下去不直接 POST, 是 type=button 觸發 JS show preview #}
+        <button type="button" id="btn-preview-approve" class="btn btn-primary">✓ 全收 ...</button>
+        <button type="button" id="btn-preview-reject"  class="btn btn-danger" disabled>✗ 全退 ... <span style="opacity:0.6; font-size:11px;">(先填意見)</span></button>
+        <button type="button" id="btn-preview-detail"  class="btn btn-secondary">執行細選 ...</button>
         <a href="{{ url_for('approval.list_view') }}" class="btn btn-secondary">取消</a>
     </div>
 </div>
+
+{# step 2: 預覽 + 二次確認 card (預設隱藏) #}
+<div class="card" id="confirm-card" style="margin-top:14px; display:none; border:2px solid var(--orange);">
+    <div class="card-title" id="confirm-title">⚠️ 執行預覽 — 確認後不能復原</div>
+
+    <div id="confirm-body" style="font-size:13.5px; line-height:1.8;">
+        <!-- JS 填入 -->
+    </div>
+
+    <div class="check-row" style="margin-top:14px; display:flex; align-items:center; gap:8px; padding:10px; background:#FFF8E1; border-radius:4px;">
+        <input type="checkbox" id="confirm-check" style="width:18px; height:18px;">
+        <label for="confirm-check" style="font-size:13px;">
+            <strong>我已了解上述副作用, 確認執行</strong>
+        </label>
+    </div>
+
+    <input type="hidden" name="confirm" value="">
+    <input type="hidden" name="action"  value="" id="hidden-action">
+
+    <div style="display:flex; gap:10px; margin-top:14px;">
+        <button type="submit" id="btn-final-execute" class="btn btn-danger" disabled>🚀 確認執行</button>
+        <button type="button" id="btn-cancel-confirm" class="btn btn-secondary">返回</button>
+    </div>
+</div>
 </form>
+
+<script>
+(function() {
+  const samba = '\\\\SF\\{{ bc.samba_dir if bc else "-" }}\\';
+  const downloadGroup = '{{ bc.download_ad_group if bc else "-" }}';
+  const fileCount = {{ files|length }};
+  const approvers = {{ approvers|length }};
+
+  const card = document.getElementById('confirm-card');
+  const title = document.getElementById('confirm-title');
+  const body = document.getElementById('confirm-body');
+  const check = document.getElementById('confirm-check');
+  const finalBtn = document.getElementById('btn-final-execute');
+  const hiddenAction = document.getElementById('hidden-action');
+  const hiddenConfirm = document.querySelector('input[name="confirm"]');
+  const comment = document.getElementById('comment-input');
+  const rejectBtn = document.getElementById('btn-preview-reject');
+
+  // 駁回意見必填: textarea 沒填就 disable 全退
+  comment.addEventListener('input', () => {
+    rejectBtn.disabled = comment.value.trim().length < 3;
+    rejectBtn.querySelector('span').style.display = rejectBtn.disabled ? '' : 'none';
+  });
+
+  // checkbox 控制 final 按鈕
+  check.addEventListener('change', () => { finalBtn.disabled = !check.checked; });
+
+  function showPreview(action) {
+    const c = comment.value.trim();
+    if (action === 'all_approve') {
+      title.innerHTML = '⚠️ 確認: 全收 ' + fileCount + ' 個檔';
+      body.innerHTML =
+        '<p>點下「🚀 確認執行」後, 系統會:</p>' +
+        '<ol style="margin-left:20px;">' +
+          '<li>UPDATE batch SET status=<code>APPROVED</code>, approved_by=<strong>你</strong></li>' +
+          '<li>把 ' + fileCount + ' 個檔從 <code>/data/exchange/{{ batch.business_code }}/inbound/</code> 搬到 <code>' + samba + '</code></li>' +
+          '<li>寫 AuditLog: APPROVE_OK × 1 + MOVE_OK × ' + fileCount + '</li>' +
+          '<li>(待設 SMTP) 寄信通知 <code>' + downloadGroup + '</code> 群組可下載</li>' +
+          '<li>redirect 回待簽列表, 該批消失</li>' +
+        '</ol>' +
+        '<p style="color:#c00; margin-top:10px;">' +
+          '⚠ <strong>檔搬走後</strong> 要復原需 IT 從 samba 目錄手動搬回. AuditLog 永遠留紀錄.<br>' +
+          '⚠ 其他 ' + (approvers - 1) + ' 位簽核人之後看到「已被你處理」, 不能再簽.' +
+        '</p>' +
+        (c ? '<p style="margin-top:10px;"><strong>你的意見:</strong> ' + escapeHtml(c) + '</p>' : '');
+    } else if (action === 'all_reject') {
+      title.innerHTML = '⚠️ 確認: 全退 ' + fileCount + ' 個檔';
+      body.innerHTML =
+        '<p>點下「🚀 確認執行」後, 系統會:</p>' +
+        '<ol style="margin-left:20px;">' +
+          '<li>UPDATE batch SET status=<code>REJECTED</code>, reject_reason=你的意見</li>' +
+          '<li>把 ' + fileCount + ' 個檔留在 <code>/data/exchange/{{ batch.business_code }}/inbound/</code> (7 天後自動清)</li>' +
+          '<li>寫 AuditLog: APPROVE_REJECT</li>' +
+          '<li>(待設 SMTP) 寄信通知上傳人, 含你的駁回原因</li>' +
+        '</ol>' +
+        '<p style="margin-top:10px;"><strong>駁回原因:</strong> ' + escapeHtml(c) + '</p>' +
+        '<p style="color:#c00; margin-top:10px;">⚠ 其他簽核人之後看到「已被你駁回」, 不能再簽.</p>';
+    } else {
+      title.innerHTML = '⚠️ 確認: 細選 (依勾選的「收/退」處理)';
+      body.innerHTML =
+        '<p>點下「🚀 確認執行」後, 系統會依檔案表格內勾選的收/退逐個處理:</p>' +
+        '<ul style="margin-left:20px;">' +
+          '<li>勾「收」: 搬到 <code>' + samba + '</code></li>' +
+          '<li>勾「退」: 留在 inbound/, 寫 REJECTED</li>' +
+          '<li>整批 status 視結果為 APPROVED / REJECTED / MIXED</li>' +
+        '</ul>';
+    }
+    hiddenAction.value = action;
+    hiddenConfirm.value = 'yes';
+    check.checked = false;
+    finalBtn.disabled = true;
+    card.style.display = 'block';
+    card.scrollIntoView({behavior: 'smooth', block: 'center'});
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  document.getElementById('btn-preview-approve').addEventListener('click', () => showPreview('all_approve'));
+  document.getElementById('btn-preview-reject').addEventListener('click', () => showPreview('all_reject'));
+  document.getElementById('btn-preview-detail').addEventListener('click', () => showPreview('detail'));
+
+  document.getElementById('btn-cancel-confirm').addEventListener('click', () => {
+    card.style.display = 'none';
+    hiddenConfirm.value = '';
+    hiddenAction.value = '';
+  });
+
+  // submit 時 disable 按鈕避免重複觸發, 顯 loading
+  document.getElementById('approval-form').addEventListener('submit', () => {
+    finalBtn.disabled = true;
+    finalBtn.innerHTML = '⏳ 處理中...';
+  });
+})();
+</script>
 {% endblock %}
