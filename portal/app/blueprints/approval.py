@@ -154,6 +154,19 @@ def do_approve(batch_id):
               business_code=batch['business_code'], batch_id=batch_id,
               detail={'moved': moved_count, 'total': len(files), 'comment': comment})
 
+    # v2.5.2: 寄信給可下載群組
+    try:
+        from ..mailer import notify_downloaders
+        from ..auth import get_group_members
+        if bc.get('download_ad_group') and moved_count > 0:
+            members = get_group_members(bc['download_ad_group'])
+            samba_path = '\\\\SF\\' + bc.get('samba_dir', '') + '\\'
+            approved_names = [f['file_name'] for f in files
+                              if not (selected_files and str(f['id']) not in selected_files)]
+            notify_downloaders(members, bc.get('name'), samba_path, approved_names)
+    except Exception as e:
+        current_app.logger.warning('[MAIL] downloader notify 失敗: ' + str(e))
+
     flash(f'已同意, {moved_count}/{len(files)} 檔案放行到 samba', 'success')
     return redirect(url_for('approval.list_view'))
 
@@ -186,6 +199,25 @@ def do_reject(batch_id):
     log_audit('APPROVE_REJECT', actor_user=current_user.ad_account,
               business_code=batch['business_code'], batch_id=batch_id,
               detail={'reason': reason})
+
+    # v2.5.2: 寄駁回信給上傳人 (PAM 接前用 batch.uploader_name 或 owner_ad)
+    try:
+        from ..mailer import notify_uploader_rejected
+        from ..auth import get_group_members
+        from ..db import get_batch_files
+        uploader_mail = batch.get('uploader_name')  # 階段二 PAM 接時填
+        if not uploader_mail and bc.get('owner_ad'):
+            # fallback: 寄給業務負責人
+            owner_info = get_group_members(bc['owner_ad'].split('\\')[-1])
+            if owner_info:
+                uploader_mail = owner_info[0].get('mail')
+        if uploader_mail:
+            files_list = get_batch_files(batch_id) or []
+            notify_uploader_rejected(uploader_mail, batch_id, bc.get('name'),
+                                     reason, [f['file_name'] for f in files_list])
+    except Exception as e:
+        from flask import current_app
+        current_app.logger.warning('[MAIL] reject notify 失敗: ' + str(e))
 
     flash('已駁回, 上傳人將收到通知信', 'info')
     return redirect(url_for('approval.list_view'))

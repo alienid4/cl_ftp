@@ -36,6 +36,8 @@ class Config:
     AD_DOMAIN = os.getenv('AD_DOMAIN', 'CORP')
     AD_BIND_USER = os.getenv('AD_BIND_USER', '')
     AD_BIND_PASS = os.getenv('AD_BIND_PASS', '')
+    AD_AUTH_MODE = os.getenv('AD_AUTH_MODE', 'simple')   # simple | ntlm
+    PORTAL_BASE_URL = os.getenv('PORTAL_BASE_URL', 'http://localhost')
 
     # Mail
     SMTP_SERVER = os.getenv('SMTP_SERVER', 'mail-relay.corp.local')
