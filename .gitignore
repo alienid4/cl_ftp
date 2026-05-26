@@ -110,3 +110,4 @@ sample_files/
 
 # sf_binaries (binary download cache, do not push to git)
 deploy/offline/sf_binaries/
+release-zip/**/sf-portal-lab-*.tar.gz
