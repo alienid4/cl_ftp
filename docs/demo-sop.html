@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>SF Portal — Demo SOP (5 角色 12 步)</title>
+<style>
+:root {
+  --g1: #26A889;
+  --g2: #1B7960;
+  --g3: #0F5444;
+  --orange: #FF8800;
+  --blue: #2563EB;
+  --purple: #7C3AED;
+  --pink: #DB2777;
+  --gray: #6B7280;
+  --bg: #F5F7F6;
+  --border: #D1D5DB;
+  --text: #111827;
+  --code-bg: #1F2937;
+  --code-fg: #E5E7EB;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 24px;
+  line-height: 1.65;
+}
+.container { max-width: 1200px; margin: 0 auto; }
+
+h1 { font-size: 26px; color: var(--g3); margin: 0 0 6px; }
+h2 { font-size: 18px; color: var(--g2); margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--g1); }
+.subtitle { color: var(--gray); margin-bottom: 24px; font-size: 14px; }
+
+/* ===== 角色 banner ===== */
+.role-banner {
+  margin: 30px 0 10px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 16px;
+  color: white;
+}
+.r1 { background: linear-gradient(90deg, var(--blue) 0%, #3B82F6 100%); }
+.r2 { background: linear-gradient(90deg, var(--gray) 0%, #9CA3AF 100%); }
+.r3 { background: linear-gradient(90deg, var(--orange) 0%, #FBBF24 100%); }
+.r4 { background: linear-gradient(90deg, var(--purple) 0%, #A78BFA 100%); }
+.r5 { background: linear-gradient(90deg, var(--pink) 0%, #F472B6 100%); }
+.role-banner .emoji { font-size: 28px; }
+.role-banner .right { margin-left: auto; font-size: 13px; opacity: 0.9; font-weight: 400; }
+
+/* ===== Step card ===== */
+.step {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-bottom: 14px;
+  position: relative;
+  border-left: 4px solid var(--g1);
+}
+.step-num {
+  position: absolute;
+  left: -16px;
+  top: 16px;
+  width: 32px;
+  height: 32px;
+  background: var(--g2);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.step-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  margin-left: 22px;
+}
+.step-body { margin-left: 22px; font-size: 14px; }
+
+/* ===== Code block ===== */
+pre, code.cmd {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  padding: 10px 14px;
+  border-radius: 5px;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 13px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+pre { white-space: pre; }
+code.inline {
+  background: #F3F4F6;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--g3);
+}
+
+/* ===== Mockup screen (SVG / div 模擬畫面) ===== */
+.screen-mockup {
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  margin: 10px 0;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.screen-titlebar {
+  background: #E5E7EB;
+  padding: 5px 12px;
+  font-size: 11px;
+  color: #6B7280;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #D1D5DB;
+}
+.screen-titlebar .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.screen-titlebar .red { background: #EF4444; }
+.screen-titlebar .yellow { background: #F59E0B; }
+.screen-titlebar .green { background: #10B981; }
+.screen-titlebar .url { margin-left: 8px; font-family: monospace; color: #374151; }
+.screen-content { padding: 14px 18px; min-height: 80px; }
+
+/* fake nav */
+.fake-nav {
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px;
+  background: white;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+  align-items: center;
+}
+.fake-nav .brand { font-weight: 700; color: var(--g2); }
+.fake-nav .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--g1); display: inline-block; margin-right: 6px; }
+.fake-nav .item { padding: 4px 8px; color: #555; cursor: default; }
+.fake-nav .user { margin-left: auto; padding: 3px 9px; background: #E0F5EF; color: var(--g2); border-radius: 12px; font-size: 11px; }
+.fake-nav .user.admin { background: #FFF1DD; color: #B8660B; }
+
+/* KPI cards */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px; }
+.kpi { border: 1px solid #eee; border-radius: 6px; padding: 12px; text-align: center; background: #fafafa; }
+.kpi-v { font-size: 28px; font-weight: 700; }
+.kpi-l { font-size: 11px; color: #888; }
+.kpi.warn { border-left: 3px solid var(--orange); }
+.kpi.warn .kpi-v { color: var(--orange); }
+.kpi.ok { border-left: 3px solid var(--g1); }
+.kpi.ok .kpi-v { color: var(--g1); }
+.kpi.err { border-left: 3px solid #EF4444; }
+.kpi.err .kpi-v { color: #EF4444; }
+
+/* Table mockup */
+table.mockup {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 12px;
+}
+table.mockup th { background: var(--g2); color: white; padding: 6px 10px; text-align: left; font-weight: 500; }
+table.mockup td { padding: 5px 10px; border-bottom: 1px solid #eee; }
+.badge { background: #E0F5EF; color: var(--g2); padding: 1px 7px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.badge.warn { background: #FFF1DD; color: var(--orange); }
+.badge.err { background: #FEE2E2; color: #DC2626; }
+
+/* Buttons row */
+.btn-row { display: flex; gap: 8px; padding: 10px; flex-wrap: wrap; }
+.btn { padding: 6px 14px; border-radius: 4px; font-size: 12px; border: 1px solid; }
+.btn.primary { background: var(--g1); border-color: var(--g1); color: white; }
+.btn.danger { background: #EF4444; border-color: #EF4444; color: white; }
+.btn.secondary { background: white; border-color: #ddd; color: #444; }
+
+/* Login form mockup */
+.login-form { padding: 18px; max-width: 360px; margin: 0 auto; }
+.login-form .field { margin-bottom: 12px; }
+.login-form .field label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; }
+.login-form .field input { width: 100%; padding: 7px 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px; }
+
+/* Confirm card */
+.preview-card {
+  margin: 10px 0;
+  padding: 14px;
+  border-radius: 6px;
+  border: 2px solid var(--orange);
+  background: #FFFBEB;
+  font-size: 12px;
+}
+.preview-card h4 { margin: 0 0 8px; color: var(--g3); }
+
+/* Expectation box */
+.expect {
+  background: #ECFDF5;
+  border-left: 4px solid var(--g1);
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin: 10px 0;
+}
+.expect strong { color: var(--g2); }
+.warn-box {
+  background: #FFFBEB;
+  border-left: 4px solid var(--orange);
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin: 10px 0;
+}
+.note {
+  background: #EFF6FF;
+  border-left: 4px solid var(--blue);
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin: 10px 0;
+}
+
+/* Screenshot placeholder */
+.screenshot-ph {
+  margin: 10px 0;
+  padding: 30px;
+  border: 2px dashed #ccc;
+  border-radius: 6px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  background: #fafafa;
+}
+
+/* env table */
+.env-table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; }
+.env-table th { background: var(--g3); color: white; padding: 8px 12px; text-align: left; }
+.env-table td { padding: 7px 12px; border-bottom: 1px solid #eee; }
+.env-table tr:hover td { background: #FAFFF9; }
+.env-table td code { background: #F3F4F6; padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+
+/* File Explorer mockup */
+.fe-mockup {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.fe-addr {
+  padding: 6px 10px;
+  background: #F5F5F5;
+  border-bottom: 1px solid #ddd;
+  font-family: monospace;
+  font-size: 12px;
+  color: #333;
+}
+.fe-toolbar { padding: 5px 10px; font-size: 12px; color: #777; border-bottom: 1px solid #eee; }
+.fe-list { padding: 0; margin: 0; list-style: none; }
+.fe-list li { padding: 6px 14px; display: flex; gap: 10px; font-size: 13px; border-bottom: 1px solid #f5f5f5; }
+.fe-list li:hover { background: #EFF6FF; }
+.fe-list .icon { color: #2563EB; }
+
+/* TOC */
+.toc { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; }
+.toc h3 { margin-top: 0; }
+.toc ol { margin: 0; padding-left: 22px; }
+.toc li { margin: 3px 0; }
+.toc a { color: var(--g2); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
+@media print {
+  .step, .role-banner { break-inside: avoid; }
+  body { padding: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>📋 SF Portal — Demo SOP</h1>
+<p class="subtitle">完整端到端流程: PRD AP 上傳 → 排程聚合 → AD 簽核 → SMB 下載 → IT 稽核 · 12 步驟 5 角色 · 預估 8 分鐘走完</p>
+
+<div class="toc">
+<h3>📑 目錄</h3>
+<ol>
+  <li><a href="#env">環境準備 (Rocky VM + 帳號表)</a></li>
+  <li><a href="#role1">角色 1️⃣ PRD AP 系統 — SFTP 上傳</a></li>
+  <li><a href="#role2">角色 2️⃣ SF 排程 — 自動聚合 (背景)</a></li>
+  <li><a href="#role3">角色 3️⃣ 簽核人 wang.manager — Portal 簽核</a></li>
+  <li><a href="#role4">角色 4️⃣ OA USER viewer — SMB 下載</a></li>
+  <li><a href="#role5">角色 5️⃣ IT admin — 稽核查詢</a></li>
+  <li><a href="#cleanup">收尾 + 結論</a></li>
+</ol>
+</div>
+
+<!-- ============ 環境準備 ============ -->
+<h2 id="env">🏗️ 環境準備 (跑 Demo 前先看)</h2>
+
+<table class="env-table">
+<thead><tr><th>項</th><th>值</th><th>備註</th></tr></thead>
+<tbody>
+<tr><td>SF Portal IP</td><td><code>192.168.187.50</code></td><td>VM (Rocky Linux 9.7), bridged 到 wifi</td></tr>
+<tr><td>Portal URL</td><td><code>http://192.168.187.50/</code></td><td>HTTP only, 上線改 HTTPS</td></tr>
+<tr><td>SMB Share</td><td><code>\\192.168.187.50\architecture</code></td><td>4 個 share: architecture/hr/finance/security</td></tr>
+<tr><td>SFTP 端</td><td><code>u01@192.168.187.50</code></td><td>密碼 <code>test1234</code> (LAB 用)</td></tr>
+<tr><td>AD 帳號 (簽核人)</td><td><code>wang.manager</code></td><td>密碼 <code>password</code></td></tr>
+<tr><td>AD 帳號 (OA USER)</td><td><code>viewer</code></td><td>SMB 帳號 = <code>viewer</code> / <code>test1234</code></td></tr>
+<tr><td>AD 帳號 (IT admin)</td><td><code>admin</code></td><td>密碼 <code>password</code>, 看全公司</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<strong>視窗準備</strong> (建議開 3 個視窗,demo 時切換):<br>
+<b>視窗 A</b>: 瀏覽器 → http://192.168.187.50/<br>
+<b>視窗 B</b>: 檔案總管 (空白)<br>
+<b>視窗 C</b>: PowerShell 跑 <code class="inline">ssh -i $env:USERPROFILE\.ssh\sf_rocky root@192.168.187.50 "tail -f /opt/portal/logs/mail-debug.log"</code> 即時看 mail
+</div>
+
+<!-- ============ 角色 1 ============ -->
+<div class="role-banner r1" id="role1">
+  <span class="emoji">🏢</span>
+  <span>角色 1️⃣ — PRD AP 主機 (模擬)</span>
+  <span class="right">用 PC PowerShell 模擬 AP 系統 SFTP 上傳</span>
+</div>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-title">在 PC 桌面建 3 個測試 CSV</div>
+  <div class="step-body">
+    <pre>cd $env:USERPROFILE\Desktop
+mkdir -Force demo-files | Out-Null
+"id,name,amount`n1,張小明,5000`n2,李大華,8000" | Out-File -Encoding utf8 demo-files\202605_客戶清單.csv
+"date,desc,amount`n2026-05-25,salary,50000" | Out-File -Encoding utf8 demo-files\202605_交易明細.csv
+"account,balance`nC001,15000`nC002,28000" | Out-File -Encoding utf8 demo-files\202605_對帳.csv
+ls demo-files</pre>
+    <div class="expect"><strong>預期看到</strong>:3 個 .csv 檔在 <code class="inline">Desktop\demo-files\</code></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-title">SFTP 上傳到 SF 主機</div>
+  <div class="step-body">
+    <pre>& "C:\Program Files\PuTTY\pscp.exe" -pw test1234 -batch `
+   demo-files\*.csv u01@192.168.187.50:inbound/</pre>
+    <div class="screenshot-ph">📸 (此處截圖你的 PowerShell 上傳成功畫面)</div>
+    <div class="expect">
+      <strong>預期看到</strong>:<br>
+      <code>202605_客戶清單.csv | 0 kB | 100%</code><br>
+      <code>202605_交易明細.csv | 0 kB | 100%</code><br>
+      <code>202605_對帳.csv | 0 kB | 100%</code>
+    </div>
+    <div class="note">
+      <strong>解說給主管</strong>:「<b>SFTP chroot</b> 把 u01 鎖在自己的目錄,看不到其他業務的檔案。實際上線時來源 IP 會限白名單,只有 PRD AP 主機能連 22 port。」
+    </div>
+  </div>
+</div>
+
+<!-- ============ 角色 2 ============ -->
+<div class="role-banner r2" id="role2">
+  <span class="emoji">⚙️</span>
+  <span>角色 2️⃣ — SF 排程 (背景自動跑, 不用操作)</span>
+  <span class="right">batch_aggregator systemd timer 每 5 秒掃</span>
+</div>
+
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-title">等 30 秒 — 排程聚合批次</div>
+  <div class="step-body">
+    <p>解說邏輯給主管:</p>
+    <ul>
+      <li>每 5 秒 systemd timer 掃 <code class="inline">/data/exchange/u0X/inbound/</code> 新檔</li>
+      <li>同 u0X + 同來源 IP + 30 秒內視為「同一批」</li>
+      <li>30 秒沒新檔 → batch 自動關閉 → status: <code class="inline">OPEN</code> → <code class="inline">PENDING_APPROVAL</code></li>
+      <li>5 分鐘安全閥: 同一批最多 5 分鐘, 超過強制關閉 (避免持續上傳永遠不結案)</li>
+    </ul>
+    <div class="warn-box">
+      <strong>等待約 35 秒</strong> 讓 idle close 觸發。期間可講解 ANY 制簽核設計。
+    </div>
+  </div>
+</div>
+
+<!-- ============ 角色 3 ============ -->
+<div class="role-banner r3" id="role3">
+  <span class="emoji">✍️</span>
+  <span>角色 3️⃣ — 簽核人 wang.manager (架構科主管)</span>
+  <span class="right">5 人 ANY 制, 任 1 簽即放行</span>
+</div>
+
+<div class="step">
+  <div class="step-num">4</div>
+  <div class="step-title">瀏覽器登入 Portal — 真實 AD bind</div>
+  <div class="step-body">
+
+    <div class="screen-mockup">
+      <div class="screen-titlebar">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="url">🔒 http://192.168.187.50/auth/login</span>
+      </div>
+      <div class="login-form">
+        <h3 style="margin-top:0;">SF 檔案交換 Portal 登入</h3>
+        <div class="field">
+          <label>AD 帳號</label>
+          <input value="wang.manager">
+        </div>
+        <div class="field">
+          <label>密碼</label>
+          <input type="password" value="••••••••">
+        </div>
+        <button class="btn primary" style="width:100%;">登入</button>
+      </div>
+    </div>
+
+    <div class="expect">
+      <strong>預期</strong>:跳到首頁 + 上方 navbar 顯 <span class="badge">一般使用者</span> wang.manager。<br>
+      底下 KPI「待我簽核」應為 1 (或更多)。
+    </div>
+
+    <div class="note">
+      <strong>解說</strong>:「Portal 走 <b>標準 LDAP simple bind</b> — 服務帳號查 user DN → 該 DN+密碼 真正 bind 驗證。失敗會顯具體原因 (帳號不存在 / 密碼錯 / AD 不通),不讓 USER 猜。」
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">5</div>
+  <div class="step-title">點 navbar「📝 我的待簽」</div>
+  <div class="step-body">
+
+    <div class="screen-mockup">
+      <div class="screen-titlebar">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="url">🔒 http://192.168.187.50/approval/list</span>
+      </div>
+      <div class="fake-nav">
+        <span class="brand"><span class="dot"></span>SF 檔案交換 Portal</span>
+        <span class="item">📊 首頁</span>
+        <span class="item" style="border-bottom: 2px solid var(--g1); font-weight:600;">📝 我的待簽</span>
+        <span class="user">一般使用者 · wang.manager</span>
+      </div>
+      <div class="screen-content">
+        <h3 style="margin-top:0;">📝 我的待簽 (1)</h3>
+        <table class="mockup">
+          <thead><tr><th>業務</th><th>批次 ID</th><th>來源</th><th>檔數</th><th>大小</th><th>年齡</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="badge">u01</span><br><span style="color:#999; font-size:11px;">架構科月結報表</span></td>
+              <td><code style="font-size:11px;">u01-20260525-0803-001</code></td>
+              <td>192.168.187.1</td>
+              <td><span class="badge">3 檔</span></td>
+              <td>176 B</td>
+              <td><span class="badge warn">2 分</span></td>
+              <td><button class="btn secondary">展開</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="expect"><strong>預期</strong>:看到 1 筆待簽 (對應剛才上傳的 3 個檔)。</div>
+    <div class="screenshot-ph">📸 (截實際 portal 待簽列表)</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">6</div>
+  <div class="step-title">點「展開」進簽核細節頁</div>
+  <div class="step-body">
+    <p>看 8 個資訊區塊:</p>
+    <ul>
+      <li><b>業務 / 來源</b>: 業務代號 / 業務名 / 業務說明 / 業務負責人 / SFTP 帳號 / PAM 申請人 (預留) / 來源主機</li>
+      <li><b>批次資訊</b>: ID / 上傳時間 / 關閉時間 / 年齡 / deadline / 大小 / samba 目標 / 下載授權 / 保留期 / 狀態</li>
+      <li><b>ANY 制簽核</b>: 5 簽核人 grid (王主管 標 (你))</li>
+      <li><b>檔案清單</b>: 9 欄 (#, 檔名, 類型, 大小, SHA-256, 上傳時間, 掃毒, 收, 退)</li>
+    </ul>
+    <div class="screenshot-ph">📸 (截整頁簽核細節)</div>
+    <div class="note">
+      <strong>解說亮點</strong>:「每個欄位都有意義。SHA-256 是檔案完整性驗證、PAM 申請 ID 是真實上傳人(階段二接)、批次年齡顯示「2 分鐘前」, deadline 顯示「7 天後超時自動駁回」。」
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">7</div>
+  <div class="step-title">點底部「✓ 全收 ...」 → 二步預覽</div>
+  <div class="step-body">
+    <p>填簽核意見 (隨意,例:「demo OK」),點「✓ 全收 ...」按鈕:</p>
+
+    <div class="screen-mockup">
+      <div class="screen-content" style="padding:14px;">
+        <div class="preview-card">
+          <h4>⚠️ 確認: 全收 3 個檔</h4>
+          <p>點下「🚀 確認執行」後, 系統會:</p>
+          <ol style="margin-left:18px; font-size:12px;">
+            <li>UPDATE batch SET status=<code>APPROVED</code>, approved_by=<b>你</b></li>
+            <li>把 3 個檔從 <code>/data/exchange/u01/inbound/</code> 搬到 <code>\\SF\architecture\</code></li>
+            <li>寫 AuditLog: APPROVE_OK × 1 + MOVE_OK × 3</li>
+            <li>寄信通知 <code>dept_archi_view</code> 群組可下載</li>
+            <li>redirect 回待簽列表, 該批消失</li>
+          </ol>
+          <p style="color:#c00; margin-top:8px; font-size:12px;">
+            ⚠ 檔搬走後要復原需 IT 從 samba 手動搬回. AuditLog 永遠留紀錄.<br>
+            ⚠ 其他 4 位簽核人之後看到「已被你處理」, 不能再簽.
+          </p>
+          <div style="margin-top:10px; padding:8px; background:white; border-radius:4px;">
+            <label><input type="checkbox" checked> <b>我已了解副作用, 確認執行</b></label>
+          </div>
+          <div style="margin-top:10px;">
+            <button class="btn danger">🚀 確認執行</button>
+            <button class="btn secondary">返回</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <strong>勾 checkbox</strong> → 「🚀 確認執行」按鈕從灰 (disabled) 變紅 (enabled)。<br>
+      <strong>點下去前再確認</strong>:批次 ID、檔數、samba 路徑、會通知誰。
+    </div>
+
+    <div class="note">
+      <strong>解說亮點</strong>:「<b>二步驟確認</b> 防誤觸 — 不像一般 web app 點按鈕直接執行。簽核是嚴肅動作, 副作用全攤開讓 USER 看完才能確認執行。」
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">8</div>
+  <div class="step-title">點「🚀 確認執行」 — 觀察視窗 C mail 跳出</div>
+  <div class="step-body">
+
+    <p>跳回「我的待簽 (0)」 + 上方 flash 訊息:</p>
+    <div class="expect" style="font-size:14px;">✅ <strong>已同意, 3/3 檔案放行到 samba</strong></div>
+
+    <p>切視窗 C (PowerShell tail mail-debug.log) 應該瞬間跳:</p>
+    <pre>====== 2026-05-25T16:XX:XX ======
+From:    sf-noreply@sflab
+To:      viewer@sflab.local
+Subject: [SF Portal] 架構科月結報表 新檔可下載 (3 個檔)
+-- body --
+您所屬群組可下載的新檔已放行:
+  業務: 架構科月結報表
+  下載路徑: \\SF\architecture\
+  保留期: 7 天 (到期自動刪)
+
+檔案清單:
+  - 202605_客戶清單.csv
+  - 202605_交易明細.csv
+  - 202605_對帳.csv
+
+SMB 拖拉: 開檔案總管打 \\SF\architecture\
+Portal 下載: 進「我的可下載」頁逐個下載或打包 ZIP.</pre>
+
+    <div class="screenshot-ph">📸 (截 mail tail 即時跳出的瞬間)</div>
+
+    <div class="note">
+      <strong>解說亮點</strong>:「簽核完成的<b>瞬間</b>系統自動寄通知信 — OA 端 USER 不用一直開 Portal 看, mail 一收到才上線拿檔。」
+    </div>
+  </div>
+</div>
+
+<!-- ============ 角色 4 ============ -->
+<div class="role-banner r4" id="role4">
+  <span class="emoji">📥</span>
+  <span>角色 4️⃣ — OA USER viewer (架構科同仁)</span>
+  <span class="right">用 Windows 檔案總管拿檔, 不用學新工具</span>
+</div>
+
+<div class="step">
+  <div class="step-num">9</div>
+  <div class="step-title">開 Windows 檔案總管, 網址列輸入 SMB 路徑</div>
+  <div class="step-body">
+
+    <div class="screen-mockup">
+      <div class="screen-titlebar">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="url">📂 \\192.168.187.50\architecture</span>
+      </div>
+      <div class="fe-mockup" style="border:0;">
+        <div class="fe-addr">📁 \\192.168.187.50\architecture</div>
+        <div class="fe-toolbar">📋 排序 ⚙️ 檢視</div>
+        <ul class="fe-list">
+          <li><span class="icon">📄</span><span style="flex:1;">202605_客戶清單.csv</span><span style="color:#888;">1 KB</span></li>
+          <li><span class="icon">📄</span><span style="flex:1;">202605_交易明細.csv</span><span style="color:#888;">1 KB</span></li>
+          <li><span class="icon">📄</span><span style="flex:1;">202605_對帳.csv</span><span style="color:#888;">1 KB</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <p>登入彈窗:</p>
+    <ul>
+      <li>帳號: <code class="inline">viewer</code></li>
+      <li>密碼: <code class="inline">test1234</code></li>
+    </ul>
+
+    <div class="screenshot-ph">📸 (截檔案總管看到 3 個 csv 的畫面 — USER 上面剛貼的那張就是這個)</div>
+
+    <div class="expect">
+      <strong>預期</strong>:看到 3 個剛搬過去的 csv。雙擊任一檔可 Excel 開啟。拖到桌面 = 模擬 OA USER 拿到資料。
+    </div>
+
+    <div class="note">
+      <strong>解說亮點</strong>:「OA USER <b>不用學新工具</b> — 跟用一般網路硬碟一樣,Windows 檔案總管直接連。權限走 AD 群組 (<code>dept_archi_view</code>),IT 不用幫每個 USER 設帳號。」
+    </div>
+  </div>
+</div>
+
+<!-- ============ 角色 5 ============ -->
+<div class="role-banner r5" id="role5">
+  <span class="emoji">🔍</span>
+  <span>角色 5️⃣ — IT 管理員 admin</span>
+  <span class="right">看完整事件鏈, 全公司操作都有留痕</span>
+</div>
+
+<div class="step">
+  <div class="step-num">10</div>
+  <div class="step-title">右上「登出」wang.manager → 用 admin 登入</div>
+  <div class="step-body">
+    <p>登入框輸入:</p>
+    <ul>
+      <li>帳號: <code class="inline">admin</code></li>
+      <li>密碼: <code class="inline">password</code></li>
+    </ul>
+    <div class="expect">
+      <strong>預期</strong>:首頁 navbar 變橘色 + 顯 <span class="badge" style="background:#FFF1DD; color:#B8660B;">SYSTEM ADMIN</span> 徽章, 上方顯橘色警示帶「您目前以管理員身分登入 — 所有操作會被稽核」。
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">11</div>
+  <div class="step-title">點 navbar「🔍 稽核」</div>
+  <div class="step-body">
+
+    <div class="screen-mockup">
+      <div class="screen-titlebar">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="url">🔒 http://192.168.187.50/audit/query</span>
+      </div>
+      <div class="fake-nav">
+        <span class="brand"><span class="dot" style="background:var(--orange);"></span>SF 檔案交換 Portal · 管理員</span>
+        <span class="item">📊 首頁</span>
+        <span class="item">📝 待簽</span>
+        <span class="item">⚙️ 業務管理</span>
+        <span class="item" style="border-bottom: 2px solid var(--g1); font-weight:600;">🔍 稽核</span>
+        <span class="user admin">SYSTEM ADMIN</span>
+      </div>
+      <div class="screen-content">
+        <h3 style="margin-top:0;">🔍 全公司稽核查詢 (10 筆)</h3>
+        <table class="mockup">
+          <thead><tr><th>時間</th><th>來源</th><th>事件</th><th>操作者</th><th>業務</th><th>檔/路徑</th><th>結果</th></tr></thead>
+          <tbody>
+            <tr><td>16:00:12</td><td><span class="badge">SFTP</span></td><td>SFTP_UPLOAD</td><td>u01</td><td><span class="badge">u01</span></td><td>202605_客戶清單.csv</td><td><span class="badge">SUCCESS</span></td></tr>
+            <tr><td>16:00:15</td><td><span class="badge">SFTP</span></td><td>SFTP_UPLOAD</td><td>u01</td><td><span class="badge">u01</span></td><td>202605_交易明細.csv</td><td><span class="badge">SUCCESS</span></td></tr>
+            <tr><td>16:00:50</td><td><span class="badge">SCHED</span></td><td>BATCH_PENDING</td><td>(排程)</td><td><span class="badge">u01</span></td><td>—</td><td><span class="badge">SUCCESS</span></td></tr>
+            <tr><td>16:03:10</td><td><span class="badge">PORTAL</span></td><td>LOGIN_OK</td><td>wang.manager</td><td>—</td><td>—</td><td><span class="badge">SUCCESS</span></td></tr>
+            <tr><td>16:05:22</td><td><span class="badge">PORTAL</span></td><td>APPROVE_OK</td><td>wang.manager</td><td><span class="badge">u01</span></td><td>3 檔已收</td><td><span class="badge">SUCCESS</span></td></tr>
+            <tr><td>16:05:22</td><td><span class="badge">PORTAL</span></td><td>MOVE_OK × 3</td><td>wang.manager</td><td><span class="badge">u01</span></td><td>→ samba/architecture/</td><td><span class="badge">SUCCESS</span></td></tr>
+            <tr><td>16:08:01</td><td><span class="badge">SMB</span></td><td>SMB_DOWNLOAD</td><td>viewer</td><td>—</td><td>202605_客戶清單.csv</td><td><span class="badge">SUCCESS</span></td></tr>
+          </tbody>
+        </table>
+        <div class="btn-row">
+          <button class="btn secondary">📥 匯出 CSV</button>
+          <button class="btn primary">⚡ GPT 分析 (去識別化)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="screenshot-ph">📸 (截實際稽核頁含本次 demo 所有事件)</div>
+
+    <div class="expect">
+      <strong>預期</strong>:看到本次 demo 留下的完整事件鏈。試篩選 <code class="inline">業務代號=u01</code> 看更窄結果。
+    </div>
+
+    <div class="note">
+      <strong>解說亮點</strong>:「<b>所有操作</b>都被稽核 — 誰上傳、誰簽核、誰下載、什麼時候、來源 IP、結果。給審計 / 主管 / 稽核處要資料,匯出 CSV 即可。階段二接 SIEM 後,這些事件還會送到公司中央 SIEM。」
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">12</div>
+  <div class="step-title">(可選) 點「⚙️ 業務管理」看設定</div>
+  <div class="step-body">
+    <p>看到 4 個業務代號 (u01~u04),每個含: 代號 / 業務名稱 / 負責人 / 簽核 AD 群組 / samba 目錄 / 狀態。</p>
+    <p>點某個「編輯」 → 看到完整 setting (含 samba 路徑變更歷史)。</p>
+    <div class="note"><strong>給主管看</strong>:「IT 在 Portal 內可直接 CRUD 業務代號, 不用 SSH 上 SF 主機改 conf。」</div>
+  </div>
+</div>
+
+<!-- ============ 結論 ============ -->
+<h2 id="cleanup">🎯 收尾 + 結論</h2>
+
+<div class="expect">
+  <h3 style="margin-top:0;">✅ 本次 demo 證明</h3>
+  <ul>
+    <li><b>SFTP chroot 隔離</b> — u01 看不到其他帳號目錄</li>
+    <li><b>排程聚合 + 安全閥</b> — 滑動 30s 同批,5 分鐘強制 close</li>
+    <li><b>真實 AD bind</b> — LDAP simple bind 兩段式 (服務帳號查 DN → user DN+pwd 驗證)</li>
+    <li><b>失敗訊息明確</b> — 不讓 USER 猜「帳密錯哪個」</li>
+    <li><b>ANY 制 5 人簽核</b> — 任 1 同意即放行</li>
+    <li><b>二步預覽防誤觸</b> — 副作用攤開 + 勾 checkbox 才能執行</li>
+    <li><b>自動寄通知信</b> — 簽核完瞬間 OA USER 收到</li>
+    <li><b>SMB 下載 OA 友善</b> — 用熟悉的 Windows 檔案總管</li>
+    <li><b>完整稽核</b> — 全公司操作留痕,匯出 CSV / 接 SIEM</li>
+  </ul>
+</div>
+
+<h3>📋 上線前還要做 (給主管看路線圖)</h3>
+
+<table class="env-table">
+<thead><tr><th>項</th><th>動作</th><th>大概時間</th></tr></thead>
+<tbody>
+<tr><td>1. 真實 AD 接</td><td>.env 改 AD_SERVER / AD_BIND_USER, 開 AD 服務帳號工單</td><td>1 天 (含等 AD 管理員)</td></tr>
+<tr><td>2. 公司 mail relay</td><td>.env 改 SMTP_SERVER</td><td>10 分</td></tr>
+<tr><td>3. HTTPS 憑證</td><td>申請公司憑證 + nginx 加 listen 443 ssl</td><td>半天 (含等憑證)</td></tr>
+<tr><td>4. PAM 接 u01~u04 密碼</td><td>寫 webhook 接 PAM rotate 通知</td><td>1-2 週 (階段二)</td></tr>
+<tr><td>5. SIEM forwarder</td><td>AuditLog → CEF 推到公司 SIEM</td><td>1 週 (階段二)</td></tr>
+<tr><td>6. 病毒掃描</td><td>接 ClamAV / Defender, batchfile.virus_scan 寫進去</td><td>3-5 天 (v2.6)</td></tr>
+<tr><td>7. 監控告警</td><td>PerfMon + 容量告警 + sshd / nginx down 警示</td><td>2-3 天</td></tr>
+<tr><td>8. 備份排程</td><td>Windows Server Backup or rsync + 設定檔 + ACL dump</td><td>1 天</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+  <strong>Demo 完整流程跑通的版本</strong>: SF Portal v2.5.3 (2026-05-25)<br>
+  <strong>GitHub</strong>: <a href="https://github.com/alienid4/cl_ftp">alienid4/cl_ftp</a>
+</div>
+
+<p style="text-align:center; color:#999; font-size:12px; margin-top:30px;">
+SF Portal Demo SOP · 2026-05-25 · 12 步 5 角色
+</p>
+
+</div>
+</body>
+</html>
