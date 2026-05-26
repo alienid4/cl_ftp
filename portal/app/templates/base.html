@@ -63,7 +63,8 @@
 </div>
 
 <div class="version-info{% if current_user.is_authenticated and current_user.is_admin %} admin{% endif %}">
-    <div><span class="v-num">v1.0.0</span> · SF Portal{% if current_user.is_authenticated and current_user.is_admin %} · 🛡️ 管理員介面{% endif %}</div>
+    <div><span class="v-num">{{ app_version }}</span> · SF Portal{% if current_user.is_authenticated and current_user.is_admin %} · 🛡️ 管理員介面{% endif %}</div>
+    <div class="v-time">build: {{ app_build_date }}</div>
 </div>
 
 {% block extra_scripts %}{% endblock %}

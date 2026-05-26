@@ -12,6 +12,10 @@ from .config import Config
 login_manager = LoginManager()
 sess = Session()
 
+# ===== APP VERSION (跟 git tag / commit 同步) =====
+APP_VERSION = 'v2.5.3'
+APP_BUILD_DATE = '2026-05-25'
+
 
 def create_app(config: Config = None):
     app = Flask(__name__, instance_relative_config=False)
@@ -54,6 +58,11 @@ def create_app(config: Config = None):
 
     app.jinja_env.filters['humanize_bytes'] = humanize_bytes
     app.jinja_env.filters['humanize_age'] = humanize_age
+
+    # ===== Inject app version into all templates =====
+    @app.context_processor
+    def inject_version():
+        return {'app_version': APP_VERSION, 'app_build_date': APP_BUILD_DATE}
 
     # ===== Logging =====
     log_dir = config.PORTAL_LOG_DIR
