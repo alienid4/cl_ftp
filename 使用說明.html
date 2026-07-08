@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>弱點彙總 Dashboard — 使用說明與介紹</title>
+<style>
+  :root{
+    --c:#1e4b8f; --cd:#163a70; --soft:#e8f0fb; --bd:#e2e8f0; --tx:#1f2937; --mut:#64748b;
+    --crit:#b71c1c; --high:#e64a19; --med:#f9a825; --low:#43a047; --ok:#2e7d32;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:#eef2f7;color:var(--tx);
+    font-family:"Segoe UI","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;line-height:1.6;}
+  .page{max-width:900px;margin:0 auto;background:#fff;}
+  header{background:linear-gradient(120deg,var(--c),var(--cd));color:#fff;padding:30px 40px;}
+  header .logo{font-size:40px;}
+  header h1{margin:6px 0 4px;font-size:26px;letter-spacing:.5px;}
+  header p{margin:0;opacity:.9;font-size:15px;}
+  section{padding:26px 40px;border-bottom:1px solid var(--bd);}
+  h2{font-size:19px;color:var(--c);margin:0 0 6px;display:flex;align-items:center;gap:8px;}
+  h2 .n{background:var(--c);color:#fff;width:26px;height:26px;border-radius:50%;display:inline-flex;
+    align-items:center;justify-content:center;font-size:14px;flex:none;}
+  .lead{color:var(--mut);margin:0 0 16px;font-size:14.5px;}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .feat{background:#f7f9fc;border:1px solid var(--bd);border-left:4px solid var(--c);border-radius:8px;padding:12px 14px;}
+  .feat b{color:var(--cd);}
+  .feat p{margin:4px 0 0;font-size:13.5px;color:var(--mut);}
+  .pain{background:#fff7f5;border:1px solid #f3d3c9;border-radius:8px;padding:14px 16px;font-size:14px;}
+  .pain b{color:var(--high);}
+  ul.tick{list-style:none;padding:0;margin:0;}
+  ul.tick li{padding:5px 0 5px 26px;position:relative;font-size:14px;}
+  ul.tick li:before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:800;}
+
+  /* ---- mockup 元件 ---- */
+  .mock{border:1px solid var(--bd);border-radius:10px;overflow:hidden;box-shadow:0 4px 14px rgba(15,23,42,.08);margin:10px 0;}
+  .mock-bar{background:linear-gradient(120deg,var(--c),var(--cd));color:#fff;padding:8px 12px;font-size:13px;display:flex;gap:8px;align-items:center;}
+  .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.5);}
+  .tabs{display:flex;gap:4px;background:#f4f6fa;padding:6px 10px;border-bottom:1px solid var(--bd);font-size:12.5px;flex-wrap:wrap;}
+  .tabs span{padding:5px 10px;border-radius:6px;color:var(--mut);}
+  .tabs span.on{background:#fff;color:var(--c);font-weight:700;border:1px solid var(--bd);border-bottom-color:#fff;}
+  .mbody{padding:12px;background:#fff;}
+
+  .group{background:#f6f8fc;border:1px solid var(--bd);border-radius:8px;padding:8px 10px;display:inline-block;vertical-align:top;margin:4px;}
+  .group .gt{font-size:11px;font-weight:700;color:var(--c);margin-bottom:6px;}
+  .cards{display:flex;gap:6px;flex-wrap:wrap;}
+  .card{background:#fff;border:1px solid var(--bd);border-top:3px solid var(--c);border-radius:6px;padding:6px 9px;min-width:64px;}
+  .card .v{font-size:19px;font-weight:800;line-height:1;}
+  .card .l{font-size:10.5px;color:var(--mut);white-space:nowrap;}
+  .c-crit{border-top-color:var(--crit);} .c-crit .v{color:var(--crit);}
+  .c-high{border-top-color:var(--high);} .c-high .v{color:var(--high);}
+  .c-med{border-top-color:var(--med);} .c-med .v{color:#c17d00;}
+  .c-od{border-top-color:var(--crit);} .c-od .v{color:var(--crit);}
+  .c-tot .v{color:var(--c);}
+
+  table.t{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px;}
+  table.t th{background:var(--c);color:#fff;padding:6px 8px;text-align:left;font-weight:600;}
+  table.t td{padding:5px 8px;border-bottom:1px solid #eef1f5;}
+  table.t td.n{text-align:center;font-variant-numeric:tabular-nums;}
+  .lnk{color:var(--c);text-decoration:underline dotted;}
+  .red{color:var(--crit);font-weight:700;}
+  .badge{display:inline-block;padding:1px 8px;border-radius:20px;color:#fff;font-size:10.5px;font-weight:700;}
+  .b-crit{background:var(--crit);} .b-high{background:var(--high);} .b-med{background:var(--med);color:#4a3800;}
+  .btn{display:inline-block;background:var(--c);color:#fff;border-radius:6px;padding:4px 10px;font-size:11.5px;font-weight:700;}
+  .callout{background:var(--soft);border-left:4px solid var(--c);border-radius:0 6px 6px 0;padding:8px 12px;font-size:13px;margin:8px 0 0;}
+
+  /* ---- SOP 步驟 ---- */
+  .steps{counter-reset:s;display:grid;gap:12px;}
+  .step{display:flex;gap:14px;background:#f7f9fc;border:1px solid var(--bd);border-radius:10px;padding:14px 16px;}
+  .step .num{counter-increment:s;flex:none;width:34px;height:34px;border-radius:50%;background:var(--c);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;}
+  .step .num:before{content:counter(s);}
+  .step h3{margin:0 0 3px;font-size:15px;}
+  .step p{margin:0;font-size:13.5px;color:var(--mut);}
+  .note{background:#fffbe9;border:1px solid #f5e2a3;border-radius:8px;padding:12px 16px;font-size:13.5px;}
+  .note b{color:#a6801a;}
+  footer{padding:18px 40px;color:var(--mut);font-size:12px;text-align:center;background:#f7f9fc;}
+  .kpi{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 0;}
+  .kpi div{background:#fff;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-size:13px;}
+  .kpi b{color:var(--c);font-size:16px;}
+
+  @media print{
+    body{background:#fff;}
+    .page{max-width:none;}
+    section{break-inside:avoid;}
+    .mock{box-shadow:none;}
+  }
+  @media(max-width:680px){ .cols{grid-template-columns:1fr;} section{padding:20px;} header{padding:22px;} }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo">🛡️</div>
+    <h1>弱點彙總 Dashboard</h1>
+    <p>把「弱點彙總報告 Excel」一鍵變成可追蹤、可催辦、可交主管的互動看板</p>
+  </header>
+
+  <!-- 這是什麼 -->
+  <section>
+    <h2><span class="n">i</span> 這是什麼？解決什麼？</h2>
+    <p class="lead">一個<strong>純網頁、免安裝、不上傳</strong>的小工具。用瀏覽器開啟，選一個 Excel，馬上得到弱點追蹤看板。</p>
+    <div class="pain">
+      <b>以前的痛：</b>每次要人工在 Excel 篩「資訊架構部 / 未結案」、算真正到期日（例外 → 展延 → 修補）、數逾期、找負責人、一封封寫催辦信……耗時又容易算錯。<br>
+      <b style="color:var(--ok)">現在：</b>丟 Excel 進去，上面全部自動算好，還能點數字看明細、一鍵產生催辦信。
+    </div>
+    <div class="kpi">
+      <div>分析條件：<b>資訊架構部</b> · <b>未結案</b></div>
+      <div>真正到期日：例外核准 → 首次展延 → 修補期限</div>
+      <div>檔案<b>只在你電腦</b>解析，不外傳</div>
+    </div>
+  </section>
+
+  <!-- 功能總覽 -->
+  <section>
+    <h2><span class="n">1</span> 四大分頁一覽</h2>
+    <p class="lead">上方四個分頁，涵蓋「看總覽 → 追個人 → 管例外 → 查明細」的完整流程。</p>
+    <div class="mock">
+      <div class="mock-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp;弱點彙總 Dashboard</div>
+      <div class="tabs"><span class="on">📈 Dashboard</span><span>👥 人員追蹤</span><span>📋 例外/展延統計</span><span>🔍 查詢</span></div>
+    </div>
+    <div class="cols">
+      <div class="feat"><b>📈 Dashboard（主管總覽）</b><p>指標卡分三組框、嚴重度×修復狀態、今日行動清單、風險排行、圖表。</p></div>
+      <div class="feat"><b>👥 人員追蹤（催辦）</b><p>每位負責人的到期分佈（互斥可加總），一鍵「產生催辦內容」、批次催辦、未來六個月到期矩陣。</p></div>
+      <div class="feat"><b>📋 例外/展延統計</b><p>處置階段占比、安全名單、例外治理雷達（覆蓋率、例外破口、到期預警、慢性風險）。</p></div>
+      <div class="feat"><b>🔍 查詢</b><p>全文搜尋 + 快速篩選，例：查某人所有 CASE、未來六個月到期清單。</p></div>
+    </div>
+  </section>
+
+  <!-- Dashboard 畫面 -->
+  <section>
+    <h2><span class="n">2</span> Dashboard：一眼掌握全局</h2>
+    <div class="mock">
+      <div class="mock-bar">📈 Dashboard</div>
+      <div class="mbody">
+        <div style="display:flex;flex-wrap:wrap;">
+          <div class="group"><div class="gt">總覽</div><div class="cards"><div class="card c-tot"><div class="v">12</div><div class="l">未結案（總）</div></div></div></div>
+          <div class="group"><div class="gt">到期時間帶（互斥·相加＝未結案）</div><div class="cards">
+            <div class="card c-od"><div class="v">3</div><div class="l">已逾期</div></div>
+            <div class="card c-high"><div class="v">3</div><div class="l">30天內</div></div>
+            <div class="card c-med"><div class="v">2</div><div class="l">31–90天</div></div>
+            <div class="card"><div class="v">2</div><div class="l">91–180天</div></div>
+            <div class="card"><div class="v">1</div><div class="l">180天以上</div></div>
+            <div class="card"><div class="v">1</div><div class="l">無到期日</div></div>
+          </div></div>
+          <div class="group"><div class="gt">嚴重度</div><div class="cards">
+            <div class="card c-crit"><div class="v">3</div><div class="l">Critical</div></div>
+            <div class="card c-high"><div class="v">4</div><div class="l">High</div></div>
+            <div class="card c-med"><div class="v">4</div><div class="l">Medium</div></div>
+            <div class="card"><div class="v">1</div><div class="l">Low</div></div>
+          </div></div>
+        </div>
+        <table class="t" style="margin-top:10px">
+          <tr><th>🩺 嚴重度</th><th>未修復</th><th>已修復</th><th>合計</th><th>修復率</th></tr>
+          <tr><td><span class="badge b-crit">Critical</span></td><td class="n red">3</td><td class="n">0</td><td class="n">3</td><td>0%</td></tr>
+          <tr><td><span class="badge b-high">High</span></td><td class="n red">4</td><td class="n">0</td><td class="n">4</td><td>0%</td></tr>
+          <tr><td><span class="badge b-med">Medium</span></td><td class="n red">4</td><td class="n" style="color:var(--ok);font-weight:700">2</td><td class="n">6</td><td>33%</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="callout">💡 <b>每個數字都能點</b> → 跳出明細表（可排序、匯出 CSV、另開新分頁）。到期用「互斥區間」設計，各欄相加剛好＝未結案，方便驗算。</div>
+  </section>
+
+  <!-- 人員追蹤 -->
+  <section>
+    <h2><span class="n">3</span> 人員追蹤：追個人 + 一鍵催辦</h2>
+    <div class="mock">
+      <div class="mock-bar">👥 人員追蹤</div>
+      <div class="mbody">
+        <div style="margin-bottom:8px"><span class="btn">📨 產生全部催辦（2 人）</span></div>
+        <table class="t">
+          <tr><th>負責人</th><th>未結案</th><th>已逾期</th><th>30天內</th><th>31–90天</th><th>91–180天</th><th>催辦</th></tr>
+          <tr><td>王小明</td><td class="n"><span class="lnk">3</span></td><td class="n red">2</td><td class="n"><span class="lnk">1</span></td><td class="n">·</td><td class="n">·</td><td><span class="btn">產生催辦內容</span></td></tr>
+          <tr><td>李四</td><td class="n"><span class="lnk">3</span></td><td class="n red">1</td><td class="n">·</td><td class="n"><span class="lnk">1</span></td><td class="n"><span class="lnk">1</span></td><td><span class="btn">產生催辦內容</span></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="callout">💡 「產生催辦內容」自動列出該負責人<strong>已逾期＋快到期</strong>的弱點，湊成一封可複製的 Mail（主旨＋內文），也能一鍵開郵件軟體。下方另有「未來六個月到期矩陣（人員 × 月）」。</div>
+  </section>
+
+  <!-- 例外統計 + 查詢 -->
+  <section>
+    <h2><span class="n">4</span> 例外治理 & 全文查詢</h2>
+    <div class="cols">
+      <div>
+        <div class="mock"><div class="mock-bar">📋 例外/展延統計</div><div class="mbody">
+          <div class="kpi" style="gap:6px">
+            <div>例外覆蓋率 <b>17%</b></div><div>例外破口 <b style="color:var(--crit)">1</b></div><div>慢性風險 <b>2</b></div>
+          </div>
+          <p style="font-size:12px;color:var(--mut);margin:8px 0 0">🔁 慢性風險＝同一弱點反覆展延/例外、始終未修，長期累積風險。</p>
+        </div></div>
+      </div>
+      <div>
+        <div class="mock"><div class="mock-bar">🔍 查詢</div><div class="mbody">
+          <div style="border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--mut)">🔍 輸入：負責人 / 主機 / 弱點名 / Plugin ID…</div>
+          <div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;font-size:11px">
+            <span class="btn" style="background:var(--c)">全部</span>
+            <span class="btn" style="background:#eef2f7;color:var(--tx)">已逾期</span>
+            <span class="btn" style="background:#eef2f7;color:var(--tx)">六個月到期</span>
+            <span class="btn" style="background:#eef2f7;color:var(--tx)">Critical</span>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOP -->
+  <section>
+    <h2><span class="n">5</span> 使用 SOP（5 步驟）</h2>
+    <div class="steps">
+      <div class="step"><div class="num"></div><div><h3>取得工具</h3><p>向資安小組索取 <b>CL_patch</b> 資料夾（或共用路徑），整包複製到你電腦即可，無需安裝。</p></div></div>
+      <div class="step"><div class="num"></div><div><h3>開啟</h3><p>進入資料夾，用瀏覽器（Chrome / Edge）雙擊 <b>index.html</b>。</p></div></div>
+      <div class="step"><div class="num"></div><div><h3>匯入 Excel</h3><p>把「弱點彙總報告(New).xlsx」<b>拖進畫面</b>或按「選擇檔案」。系統自動解析（檔案不上傳，只在本機）。</p></div></div>
+      <div class="step"><div class="num"></div><div><h3>看 & 追</h3><p>四個分頁切換：Dashboard 看總覽、人員追蹤按「產生催辦內容」發信、例外統計盯治理、查詢找特定 CASE。<b>任何數字都能點開明細</b>。</p></div></div>
+      <div class="step"><div class="num"></div><div><h3>下次更新</h3><p>拿到新版 Excel，重開後直接匯入新檔即可覆蓋。<b>不匯入新檔時，會自動記住上次資料</b>，開啟即見。</p></div></div>
+    </div>
+  </section>
+
+  <!-- 注意 -->
+  <section>
+    <h2><span class="n">!</span> 重點提醒</h2>
+    <ul class="tick">
+      <li><b>資料不外傳</b>：Excel 只在你的瀏覽器本機解析，不會上傳任何伺服器。</li>
+      <li><b>免安裝、可離線</b>：一個資料夾、一個瀏覽器就能跑。</li>
+      <li><b>記住上次匯入</b>：存在「這台電腦、這個瀏覽器」，換機器不會跟著走；「🗑 清除記憶」可清除。</li>
+      <li><b>依欄位名稱讀取</b>：Excel 欄位順序改變仍可運作；缺必要欄位會明確提示。</li>
+    </ul>
+    <div class="note" style="margin-top:12px"><b>畫面輔助說明：</b>本頁截圖為介面示意（數字為範例）。實際數字依你匯入的 Excel 即時計算。</div>
+  </section>
+
+  <footer>弱點彙總 Dashboard · 純前端本機工具 · 使用說明與 SOP　|　如有問題請洽資安管理小組</footer>
+</div>
+</body>
+</html>
